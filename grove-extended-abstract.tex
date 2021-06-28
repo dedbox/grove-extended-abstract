@@ -1,0 +1,266 @@
+\documentclass[nonacm, acmsmall, screen, review]{acmart}
+
+\usepackage{stmaryrd}
+
+\newcommand{\e}{\varepsilon}
+
+\newcommand{\id}[1]{\textcolor{gray}{\ensuremath{#1}}}
+\newcommand{\eid}[2]{{#2}^{\id{#1}}}
+
+\newcommand{\hole}{\ensuremath{\square}} %\textcolor{violet}{\llparenthesis}}\textcolor{violet}{\rrparenthesis}}
+\newcommand{\conflictHole}[1]{%
+{\noexpandarg\StrSubstitute{#1}{,}{\textcolor{red}{\,\textbf{|}\,}}[\myargs]%
+{\textcolor{red}{\textbf{\{}}\myargs\textcolor{red}{\textbf{\}}}}}}%
+\newcommand{\emptyHole}[2]{\square_{\id{(#1, #2)}}}
+
+\newcommand{\eVar}[2]{\eid{#1}{#2}}
+\newcommand{\eFun}[4]{\eid{#1}{\lambda} #2 : #3 . #4}
+\newcommand{\eApp}[3]{\eid{#1}{\left(#2~#3\right)}}
+\newcommand{\eNum}[2]{\eid{#1}{\underline{#2}}}
+\newcommand{\ePlus}[3]{#2~\eid{#1}{\texttt{+}}~#3}
+\newcommand{\eTimes}[3]{#2~\eid{#1}{\texttt{*}}~#3}
+\newcommand{\pVar}[2]{\eid{#1}{#2}}
+\newcommand{\tArrow}[3]{#2 \eid{#1}{\rightarrow} #3}
+\newcommand{\tNum}[1]{\eid{#1}{Num}}
+
+\newcommand{\multiVertex}[1]{\textcolor{red}{\ensuremath{\curlyveedownarrow_{#1}}}}
+\newcommand{\cycleVertex}[1]{\textcolor{red}{\ensuremath{\circlearrowleft_{#1}}}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\title[Grove]{Grove: A Convergent Collaborative Structure-Editor Calculus}
+
+% \author{Michael D. Adams}
+% \orcid{0000-0003-3160-6972}
+
+\author{Eric Griffis}
+\orcid{0000-0003-1693-6172}
+
+% \author{Cyrus Omar}
+% \orcid{0000-0003-4502-7971}
+\affiliation{
+  %\position{Assistant Research Scientist}
+  \department[0]{Computer Science and Engineering}
+  \department[1]{Electrical Engineering and Computer Science}
+  \department[2]{College of Engineering}
+  \institution{University of Michigan}
+  \streetaddress{Bob and Betty Beyster Building, 2260 Hayward Street}
+  \city{Ann Arbor}
+  \state{MI}
+  \postcode{48109-2121}
+  \country{USA}
+}
+
+\maketitle
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Problem and Motivation}
+
+% (avoid creating a fight in the intro by claiming things the reader may summarily reject)
+
+% (Cyrus: We use version control systems and we even use live share)
+Programming is increasingly collaborative.
+We use a variety of collaborative development tools, ranging from offline version control systems like Git~\cite{?} to real time collaboration tools such as Live Share~\cite{?}.
+These tools are largely text based.
+
+% (introduce structure editing)
+In recent years, structure editing has been an active research area~\cite{scratch, MPS, hazel, and something like WebFlow that invokes this category of end user dev tools}.
+
+% (Cyrus: in recent years, structure editing has been an active research area... talk about Hazel, Scratch, MPS, etc.
+%
+%%% Make it clear this is something our community should care about)
+
+Our goal is to make structure editing collaborative.
+Existing collaboration techniques underlying tools such at Git or Live Share are text based and it is not clear how to generalize these approaches to a structured setting.
+Text editors involve linear edits, e.g., line or character insertions and deletions, but structure editors involve tree edits, e.g., node insertions and deletions and repositioning actions.
+
+In this paper, we introduce Grove, a collaborative structure editor calculus based on Hazelnut~\cite{?}, a single-user structure editor calculus.
+(Introduce Grove: what makes it collaborative? what interesting things do we get out of it?)
+- commutativity result where edits can be played in any order (Which means that collaboration is just replay)
+- modeling the edited structure as a graph allows us to represent "interesting" states that arise naturally in a collaborative setting, such as conflicts and cycles
+- the user do not have to work with the graph directly: it can be decomposed into a collection of trees with references between them, which we call a \emph{grove}.
+- users act on the grove. user actions are converted to graph edits so they can be sent to other users for replay.
+
+% Structural edits are a record of how a program has changed and having access to the record can be useful.
+% Text diffs discard the record of changes.
+% Git, for example, records the movement of a multi-line function as a sequence of independent line deletions and additions.
+
+% (Cyrus: Why is this a hard problem? All our existing tools are text based and it isn't clear how to do that correctly in a structured setting.)
+
+% (We're not doing the text diff thing because that throws away the record of what changed, and having access to that record directly, as opposed to inferring it through diffs, (??) .)
+
+
+% (There are a few ways to handle this: e.g., git-style diff-and-merge is too lossy.
+% Instead, represent changes as actions.)
+
+% (There are other systems that use action logs, e.g., live share, but edits are still text based and we want them to be structure edits instead.)
+
+\section{Background and Related Work}
+
+(Syntactic) Structure Editing (Scratch, ...)
+
+Semantic Structure Editing (Hazel)
+
+Collaborative Editing?
+
+CRDT-style coordination (as opposed to operational transforms)
+
+\section{Approach and Uniqueness}
+
+% starting
+Alice and Bob are writing a program together.
+They each open their editor and see an empty hole ($\hole$).
+
+% sketch and share
+Alice constructs a number 1.
+It replaces the hole in her editor.
+Alice pushes her edit to Bob and then he also sees the 1.
+
+% wrapping
+With his cursor on the 1, Bob constructs a + operator.
+It wraps the 1, moving the number to left side of the +.
+The right side of the + is an empty hole.
+Bob pushes his edit to Alice and then she sees the + wrapped around the 1.
+
+% conflict
+Alice and Bob both put their cursors on the empty right side of the +.
+Alice constructs a * operator at the same time that Bob constructs a variable $x$.
+They push their edits to each other at the same time.
+Now the right side of the + has a conflict: is it a * or an $x$?
+At the moment, it is both.
+
+% deletion
+After some discussion, Alice and Bob decide it should be a *.
+Alice deletes the $x$ and pushes the edit to Bob.
+Both Alice and Bob see $1 + \hole * \hole$.
+The conflict is resolved.
+The $x$, now disconnected from the main program, is shown in the set of deleted terms (which acts as a sort of cut-and-paste buffer).
+
+% restoration / multiparents
+Alice moves the $x$ to the left side of the *.
+At the same time, Bob moves the $x$ to the right side of the *.
+They push their edits to each other at the same time.
+Now the $x$ is on both sides of the *.
+Both Alice and Bob see $1 + \multiVertex{\e_1} * \multiVertex{\e_1}$.
+The $x$ is again detached from the main program, this time shown as the term associated with reference $\multiVertex{\e_1}$.
+
+% what remains
+After further discussion, Alice and Bob decide to try a different approach.
+Alice deletes the references.
+Bob deletes the 1 and constructs another * operator in its place.
+They push their edits to each other.
+Both Alice and Bob see $\hole * \hole + \hole * \hole$.
+Alice moves the left * to the left side of the right * and sees $\hole + \hole * \hole * \hole$.
+Bob moves the right * to the right side of the left * and sees $\hole * \hole * \hole + \hole$.
+They push their changes to each other.
+Both Alice and Bob see $\hole + \hole$.
+Both *s are now connected to each other and disconnected from the main program, even though neither Alice nor Bob fully disconnected either one.
+Alice and Bob now see, separated from the main program, $\hole * \cycleVertex{\e_3}$ associated with reference $\cycleVertex{\e_2}$ and $\cycleVertex{\e_2} * \hole$ associated with reference $\cycleVertex{\e_3}$.
+What happened?
+Moving a term involves detaching it from its parent and attaching it to a new one.
+For both Alice and Bob, the old parent was the + and the new parent was the opposing *.
+Each side's local edits each detach one * and not the other.
+
+% % Simple cases:
+
+% 1. start collaborating (root, hole)
+% 2. sketch and share (Construct, push)
+
+% % More interesting cases:
+
+% 3. wrapping (default position)
+% 4. conflicting edits (multichild)
+
+% Why we need a graph / Interesting subtleties:
+
+% 4. deletion (Delete, noparents)
+% 5. restoration (Relocate, multiparents)
+% 6. what remains (unicycles)
+
+Modeling a program as a graph with a distinguished root allows us to handle interesting states like the ones in our examples.
+Such a graph can be decomposed into a \emph{grove} consisting of three sets:
+  terms corresponding to vertices with no parents,
+  terms corresponding to vertices with multiple parents,
+  and terms corresponding to vertices on unicyclic subgraphs.
+  %   The main program corresponds to the descendants of the root.
+% Deleted terms correspond to any other vertices with no parents.
+% Terms restored more than once correspond to vertices with multiple parents.
+% Whatever remains corresponds to vertices on unicyclic subgraphs.
+
+% The terms in a conflict correspond to vertices that share a parent.
+
+
+% Sometimes, terms are easier to work with than a graph, e.g., when evaluating the program.
+% For such cases, we propose a \emph{grove}, three sets of terms respectively corresponding to vertices with no parents, vertices with multiple parents, and vertices on unicyles.
+
+
+% (Make it example driven: Alice and Bob. Be careful not to plagiarize Michael.)
+
+% (simple cases, conflicts, why we need a graph ~> why groves are a thing)
+
+% We (cyrus: need to) model a program as a graph (which allows us to handle interesting subtleties).
+% This allows us to model tricky program states with holes and references.
+
+% (neat idea: we represent conflicts as holes)
+
+% Each user has a copy of the graph.
+% A user can update all of the others with a ``sync'' action that coordinates propagation via an edit action calculus. 
+% Actions in the calculus are commutative, so all users will converge on the same state as edits are synchronized.
+
+\section{Results and Contributions}
+
+Results: commutativity theorem
+Contribution: clean collaborative editing (via the commutativity theorem)
+
+(Next steps (maybe): looking forward to semantic structure editing)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% figures: grammars and graph diagrams like in section 2
+
+\begin{figure}
+  \[
+    \arraycolsep=0pt
+    \begin{array}{lcllll}
+      t & {}\in{} & Term & {}::={} &
+        e
+        \mid \tau
+        \mid q
+      \\
+      e & {}\in{} & Exp & {}::={} &
+        \eVar{G}{x}
+        \mid \eFun{G}{q}{\tau}{e}
+        \mid \eApp{G}{e}{e}
+        \mid \eNum{G}{n}
+        \mid \ePlus{G}{e}{e}
+        \mid \eTimes{G}{e}{e}
+        \mid \multiVertex{\e}
+        \mid \cycleVertex{\e}
+        \mid \conflictHole{e_i}_{i \leq n}
+        \mid \emptyHole{v}{p}
+      \\
+      \tau & {}\in{} & Typ & {}::={} &
+        \tArrow{G}{\tau}{\tau}
+        \mid \tNum{G}
+        \mid \multiVertex{\e}
+        \mid \cycleVertex{\e}
+        \mid \conflictHole{\tau_i}_{i \leq n}
+        \mid \emptyHole{v}{p}
+      \\
+      q & {}\in{} & Pat{} & {}::={} &
+        \pVar{G}{x}
+        \mid \multiVertex{\e}
+        \mid \cycleVertex{\e}
+        \mid \conflictHole{q_i}_{i \leq n}
+        \mid \emptyHole{v}{p}
+      \\
+    \end{array}
+  \]  
+  \caption{Term syntax}
+  \label{fig:Term syntax}
+\end{figure}%
+
+\end{document}
