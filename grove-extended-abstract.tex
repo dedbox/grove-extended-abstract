@@ -1,5 +1,11 @@
 \documentclass[nonacm, acmsmall, screen, review]{acmart}
 
+%%
+%% \BibTeX command to typeset BibTeX logo in the docs
+\AtBeginDocument{%
+  \providecommand\BibTeX{{%
+    \normalfont B\kern-0.5em{\scshape i\kern-0.25em b}\kern-0.8em\TeX}}}
+
 \usepackage{stmaryrd}
 
 \newcommand{\e}{\varepsilon}
@@ -57,58 +63,39 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Problem and Motivation}
+\section{Introduction}
 
 % (avoid creating a fight in the intro by claiming things the reader may summarily reject)
 
 % (Cyrus: We use version control systems and we even use live share)
 Programming is increasingly collaborative.
-We use a variety of collaborative development tools, ranging from offline version control systems like Git~\cite{?} to real time collaboration tools such as Live Share~\cite{?}.
+We use a variety of collaborative development tools, ranging from offline version control systems like Git~\cite{chacon_pro_2014} to real time collaboration tools such as Live Share~\cite{noauthor_use_nodate}.
 These tools are largely text based.
 
 % (introduce structure editing)
-In recent years, structure editing has been an active research area~\cite{scratch, MPS, hazel, and something like WebFlow that invokes this category of end user dev tools}.
-
 % (Cyrus: in recent years, structure editing has been an active research area... talk about Hazel, Scratch, MPS, etc.
-%
-%%% Make it clear this is something our community should care about)
+In recent years, structure editing has been an active research area~\cite{resnick_scratch_2009, voelter_language_2011, omar_hazelnut_2017,noauthor_webflow_nodate}.
+%%% Make it clear this is something our community should care about
+Structure editing (tries to) make (syntactically) invalid programs impossible to represent, which simplifies the editing process for programmers at every skill level.
+(``For example \ldots'' ?)
 
 Our goal is to make structure editing collaborative.
-Existing collaboration techniques underlying tools such at Git or Live Share are text based and it is not clear how to generalize these approaches to a structured setting.
-Text editors involve linear edits, e.g., line or character insertions and deletions, but structure editors involve tree edits, e.g., node insertions and deletions and repositioning actions.
-
-In this paper, we introduce Grove, a collaborative structure editor calculus based on Hazelnut~\cite{?}, a single-user structure editor calculus.
-(Introduce Grove: what makes it collaborative? what interesting things do we get out of it?)
-- commutativity result where edits can be played in any order (Which means that collaboration is just replay)
-- modeling the edited structure as a graph allows us to represent "interesting" states that arise naturally in a collaborative setting, such as conflicts and cycles
-- the user do not have to work with the graph directly: it can be decomposed into a collection of trees with references between them, which we call a \emph{grove}.
-- users act on the grove. user actions are converted to graph edits so they can be sent to other users for replay.
-
-% Structural edits are a record of how a program has changed and having access to the record can be useful.
-% Text diffs discard the record of changes.
-% Git, for example, records the movement of a multi-line function as a sequence of independent line deletions and additions.
+Existing collaboration techniques underlying tools such at Git or Live Share are text based.
+Text editing involves linear edits, e.g., line or character insertions and deletions.
+Structure editing involve tree edits, e.g., node insertions, deletions, and repositionings.
+It is not clear how to generalize text editing to a structured setting.
 
 % (Cyrus: Why is this a hard problem? All our existing tools are text based and it isn't clear how to do that correctly in a structured setting.)
+In this paper, we introduce Grove, a \emph{collaborative structure editor} calculus based on Hazelnut~\cite{omar_hazelnut_2017}, a single-user structure editor calculus.
+% (Introduce Grove: what makes it collaborative? what interesting things do we get out of it?)
+In the Grove calculus, edits are commutative and programs are represented as graphs.
+Because edits can be applied in any order, collaboration reduces to replay.
+This property is unique to Grove.
+Using a graph representation allows us to model interesting states that arise naturally in a collaborative setting, such as conflicts and cycles.
+Users do not have to work with the graph directly---it can be decomposed into a collection of trees with references between them, which we call a \emph{grove}.
+User edits on the grove can be converted into graph edits to be applied locally or replayed elsewhere by another user.
 
-% (We're not doing the text diff thing because that throws away the record of what changed, and having access to that record directly, as opposed to inferring it through diffs, (??) .)
-
-
-% (There are a few ways to handle this: e.g., git-style diff-and-merge is too lossy.
-% Instead, represent changes as actions.)
-
-% (There are other systems that use action logs, e.g., live share, but edits are still text based and we want them to be structure edits instead.)
-
-\section{Background and Related Work}
-
-(Syntactic) Structure Editing (Scratch, ...)
-
-Semantic Structure Editing (Hazel)
-
-Collaborative Editing?
-
-CRDT-style coordination (as opposed to operational transforms)
-
-\section{Approach and Uniqueness}
+\section{Approach}
 
 % starting
 Alice and Bob are writing a program together.
@@ -118,26 +105,30 @@ They each open their editor and see an empty hole ($\hole$).
 Alice constructs a number 1.
 It replaces the hole in her editor.
 Alice pushes her edit to Bob and then he also sees the 1.
+(we're assuming it's realtime-ish here, but there's nothing in this narrative or underlying technical development that precludes a more traditional Git-style approach)
 
 % wrapping
 With his cursor on the 1, Bob constructs a + operator.
 It wraps the 1, moving the number to left side of the +.
 The right side of the + is an empty hole.
-Bob pushes his edit to Alice and then she sees the + wrapped around the 1.
+Bob pushes this edit to Alice and then she sees the + wrapped around the 1.
 
 % conflict
 Alice and Bob both put their cursors on the empty right side of the +.
 Alice constructs a * operator at the same time that Bob constructs a variable $x$.
-They push their edits to each other at the same time.
+They push their edits to each other at the same time, i.e., without any global relative ordering between the two edits.
 Now the right side of the + has a conflict: is it a * or an $x$?
-At the moment, it is both.
+This fact is explicitly represented as a conflict hole ($1 + \conflictHole{\hole * \hole, x}$) for both Alice and Bob.
 
-% deletion
+% deletion / detach
 After some discussion, Alice and Bob decide it should be a *.
-Alice deletes the $x$ and pushes the edit to Bob.
+Alice deletes the $x$.
+% edits to detached terms are not lost
+(Concurrently, Bob keeps editing the $X$ ... and his changes are not lost)
+Alice pushes the edit to Bob.
 Both Alice and Bob see $1 + \hole * \hole$.
 The conflict is resolved.
-The $x$, now disconnected from the main program, is shown in the set of deleted terms (which acts as a sort of cut-and-paste buffer).
+The $x$, now disconnected from the main program, is shown in a set of deleted terms.
 
 % restoration / multiparents
 Alice moves the $x$ to the left side of the *.
@@ -217,6 +208,22 @@ Contribution: clean collaborative editing (via the commutativity theorem)
 
 (Next steps (maybe): looking forward to semantic structure editing)
 
+\section{Related Work}
+
+(Syntactic) Structure Editing (Scratch, ...)
+
+Semantic Structure Editing (Hazel)
+
+Collaborative Editing?
+
+CRDT-style coordination (as opposed to operational transforms)
+- similar to our approach b.c. of commutativity results, but our is unique b.c. of structure editing (vs text editing)
+
+\section{Conclusion}
+
+Connect the results with collaborative structure editing: we (can now / should be able to) get the same kind of functionality as collaborative text editing in a structured setting. This paper reimagines some of it around communicationg structure edits, as opposed to communicating line- or character-level text edits.
+We leave this for future work.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % figures: grammars and graph diagrams like in section 2
@@ -262,5 +269,11 @@ Contribution: clean collaborative editing (via the commutativity theorem)
   \caption{Term syntax}
   \label{fig:Term syntax}
 \end{figure}%
+
+%%
+%% The next two lines define the bibliography style to be used, and
+%% the bibliography file.
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{Grove}
 
 \end{document}
