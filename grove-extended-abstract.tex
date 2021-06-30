@@ -63,37 +63,43 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% TODO: name-check Hazel and Scratch and MPS (and WebFlow)
+
 \section{Introduction}
 
 % (avoid creating a fight in the intro by claiming things the reader may summarily reject)
 
 % (Cyrus: We use version control systems and we even use live share)
 Programming is increasingly collaborative.
-We use a variety of collaborative development tools, ranging from offline version control systems like Git~\cite{chacon_pro_2014} to real time collaboration tools such as Live Share~\cite{noauthor_use_nodate}.
-These tools are largely text based.
+Programmers use a variety of tools, ranging from batch version control systems like Git~\cite{chacon_pro_2014} to real time collaboration tools such as Live Share~\cite{noauthor_use_nodate}, to coordinate changes to a common code base.
 
 % (introduce structure editing)
 % (Cyrus: in recent years, structure editing has been an active research area... talk about Hazel, Scratch, MPS, etc.
-In recent years, structure editing has been an active research area~\cite{resnick_scratch_2009, voelter_language_2011, omar_hazelnut_2017,noauthor_webflow_nodate}.
+These collaboration tools largely assume that programs are edited as text.
+However, structure editing has become increasingly prominent in both research and practice in recent years with tools like 
+Scratch~\cite{resnick_scratch_2009}, 
+MPS~\cite{voelter_language_2011}, 
+Hazel~\cite{omar_hazelnut_2017}, 
+WebFlow~\cite{noauthor_webflow_nodate},
+and others.
 %%% Make it clear this is something our community should care about
-Structure editing (tries to) make (syntactically) invalid programs impossible to represent, which simplifies the editing process for programmers at every skill level.
-(``For example \ldots'' ?)
+Structure editing makes (syntactically or semantically) invalid programs impossible to represent, which promises to simplifies the editing process for programmers at every skill level.
 
-Our goal is to make structure editing collaborative.
 Existing collaboration techniques underlying tools such at Git or Live Share are text based.
 Text editing involves linear edits, e.g., line or character insertions and deletions.
-Structure editing involve tree edits, e.g., node insertions, deletions, and repositionings.
-It is not clear how to generalize text editing to a structured setting.
+Structure editing, in contrast, involves tree edits, e.g., node insertions, deletions, and repositionings.
+It is not clear how to generalize collaborative techniques rooted in text editing to a structured setting.
+Our goal is to develop collaborative techniques that are rooted in structure editing.
 
 % (Cyrus: Why is this a hard problem? All our existing tools are text based and it isn't clear how to do that correctly in a structured setting.)
-In this paper, we introduce Grove, a \emph{collaborative structure editor} calculus based on Hazelnut~\cite{omar_hazelnut_2017}, a single-user structure editor calculus.
-% (Introduce Grove: what makes it collaborative? what interesting things do we get out of it?)
-In the Grove calculus, edits are commutative and programs are represented as graphs.
-Because edits can be applied in any order, collaboration reduces to replay.
-This property is unique to Grove.
-Using a graph representation allows us to model interesting states that arise naturally in a collaborative setting, such as conflicts and cycles.
-Users do not have to work with the graph directly---it can be decomposed into a collection of trees with references between them, which we call a \emph{grove}.
-User edits on the grove can be converted into graph edits to be applied locally or replayed elsewhere by another user.
+In this paper, we introduce Grove, a \emph{collaborative structure editor calculus} based on Hazelnut~\cite{omar_hazelnut_2017}, a single-user structure editor calculus.
+% (Introduce Grove: what makes it collaborative? what interesting thingG
+In Grove, edits are commutative, i.e., they can be applied in any order, so collaboration is simply replay.
+The shared edit state is represented as a graph, which is necessary to model interesting states that arise naturally in a collaborative setting, 
+including direct conflicts and positioning conflicts. 
+Users do not work with this graph directly---instead, the graph can be decomposed into a collection of syntax trees with references between them, which we call a \emph{grove}.
+User actions on the grove can be converted into graph edits to be applied locally or sent to another user for replay.
+
 
 \section{Approach}
 
@@ -155,37 +161,17 @@ Moving a term involves detaching it from its parent and attaching it to a new on
 For both Alice and Bob, the old parent was the + and the new parent was the opposing *.
 Each side's local edits each detach one * and not the other.
 
-% % Simple cases:
-
-% 1. start collaborating (root, hole)
-% 2. sketch and share (Construct, push)
-
-% % More interesting cases:
-
-% 3. wrapping (default position)
-% 4. conflicting edits (multichild)
-
-% Why we need a graph / Interesting subtleties:
-
-% 4. deletion (Delete, noparents)
-% 5. restoration (Relocate, multiparents)
-% 6. what remains (unicycles)
-
-Modeling a program as a graph with a distinguished root allows us to handle interesting states like the ones in our examples.
-Such a graph can be decomposed into a \emph{grove} consisting of three sets:
-  terms corresponding to vertices with no parents,
-  terms corresponding to vertices with multiple parents,
-  and terms corresponding to vertices on unicyclic subgraphs.
-  %   The main program corresponds to the descendants of the root.
+% Modeling a program as a graph with a distinguished root allows us to handle interesting states like the ones in our examples.
+% Such a graph can be decomposed into a \emph{grove} consisting of three sets:
+%   terms corresponding to vertices with no parents,
+%   terms corresponding to vertices with multiple parents,
+%   and terms corresponding to vertices on unicyclic subgraphs.
+% The main program corresponds to the descendants of the root.
 % Deleted terms correspond to any other vertices with no parents.
 % Terms restored more than once correspond to vertices with multiple parents.
 % Whatever remains corresponds to vertices on unicyclic subgraphs.
+% Conflicts correspond to vertices that share a parent.
 
-% The terms in a conflict correspond to vertices that share a parent.
-
-
-% Sometimes, terms are easier to work with than a graph, e.g., when evaluating the program.
-% For such cases, we propose a \emph{grove}, three sets of terms respectively corresponding to vertices with no parents, vertices with multiple parents, and vertices on unicyles.
 
 
 % (Make it example driven: Alice and Bob. Be careful not to plagiarize Michael.)
@@ -212,6 +198,8 @@ Contribution: clean collaborative editing (via the commutativity theorem)
 
 (Syntactic) Structure Editing (Scratch, ...)
 
+% These properties (commutativity and graph representation) are unique to Grove.
+
 Semantic Structure Editing (Hazel)
 
 Collaborative Editing?
@@ -221,8 +209,10 @@ CRDT-style coordination (as opposed to operational transforms)
 
 \section{Conclusion}
 
-Connect the results with collaborative structure editing: we (can now / should be able to) get the same kind of functionality as collaborative text editing in a structured setting. This paper reimagines some of it around communicationg structure edits, as opposed to communicating line- or character-level text edits.
+Connect the results with collaborative structure editing: we (can now / should be able to) get the same kind of functionality as collaborative text editing in a structured setting. 
+This paper reimagines some of it around communicationg structure edits, as opposed to communicating line- or character-level text edits.
 We leave this for future work.
+% convey any excitement about the future here, not before
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
