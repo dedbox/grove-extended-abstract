@@ -102,6 +102,8 @@ including direct conflicts and positioning conflicts.
 Users do not work with this graph directly---instead, the graph can be decomposed into a collection of syntax trees with references between them, which we call a \emph{grove}.
 User actions on the grove can be converted into graph edits to be applied locally or sent to another user for replay.
 
+% TODO: outline the rest of the paper
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Approach}
@@ -111,18 +113,18 @@ Suppose Alice and Bob want to collaboratively edit a program.
 For our examples, the goal is to arrive at a simple arithmetic expression of initially indeterminate form.
 Although we assume something like real-time synchronization,
 neither this narrative nor the underlying technical development precludes a more traditional Git-style approach.
-Upon opening their respective editors to a new shared program,
-both Alice and Bob see a cursor on an empty hole ($\hole$).
 
 % sketch and share 
-Alice begins by pressing \kbinput{1}, which constructs a number (1).
+Upon opening their respective editors to a new shared program,
+both Alice and Bob see a cursor on an empty hole ($\hole$).
+Alice begins by constructing a number (1).
 The new term ``fills'' the hole under the cursor by taking its place.
 Bob continues to see the hole until he receives Alice's edit,
-at which point he also see the number instead of the hole.
+at which point he also see the number.
 
 % wrapping
-Bob builds on Alice's work by pressing \kbinput{+}, which constructs a binary sum ($\ePlus{}{\hole}{\hole}$).
-Because his cursor is on a concrete term instead of an empty hole, the existing term is ``wrapped'' by the new one.
+Bob builds on Alice's work by constructing a binary sum ($\ePlus{}{\hole}{\hole}$).
+Because his cursor is on a concrete term (the number) instead of an empty hole, the existing term is ``wrapped'' by the new one.
 Bob now sees a sum with the number on the left and an empty hole on the right ($\ePlus{}{1}{\hole}$).
 Alice continues to see only the number until she receives Bob's edit,
 at which point she also sees the sum.
@@ -165,10 +167,9 @@ Bob decides to wrap the right product with the left one.
 He deletes the right product and relocates it to the right side of the left product ($\ePlus{}{\eTimes{}{\hole}{\eTimes{}{\hole}{\hole}}}{\hole}$).
 Alice and Bob see two slightly different arithmetic forms built around the sum.
 However, after they receive each other's edits, both products are detached from the sum ($\ePlus{}{\hole}{\hole}$).
-One product has a reference on its left ($\eTimes{}{\cycleVertex{\e_2}}{\hole}$).
+One product has a reference to the other on its left ($\eTimes{}{\cycleVertex{\e_2}}{\hole}$).
 The other has a reference on its right ($\eTimes{}{\hole}{\cycleVertex{\e_3}}$).
-Each product references the other in a cycle that can be
-decomposed into a pair of acyclic terms where each has a symbolic reference to the other.
+Together, they form a cycle.
 
 % Modeling a program as a graph with a distinguished root allows us to handle interesting states like the ones in our examples.
 % Such a graph can be decomposed into a \emph{grove} consisting of three sets:
@@ -225,7 +226,7 @@ CRDT-style coordination (as opposed to operational transforms)
 \section{Conclusion}
 
 Connect the results with collaborative structure editing: we (can now / should be able to) get the same kind of functionality as collaborative text editing in a structured setting. 
-This paper reimagines some of it around communicationg structure edits, as opposed to communicating line- or character-level text edits.
+This paper reimagines some of it around communicating structure edits, as opposed to communicating line- or character-level text edits.
 We leave this for future work.
 % convey any excitement about the future here, not before
 
