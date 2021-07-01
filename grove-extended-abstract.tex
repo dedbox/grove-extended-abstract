@@ -32,6 +32,8 @@
 \newcommand{\multiVertex}[1]{\textcolor{red}{\ensuremath{\curlyveedownarrow_{#1}}}}
 \newcommand{\cycleVertex}[1]{\textcolor{red}{\ensuremath{\circlearrowleft_{#1}}}}
 
+\newcommand{\kbinput}[1]{\texttt{#1}}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{document}
@@ -100,66 +102,73 @@ including direct conflicts and positioning conflicts.
 Users do not work with this graph directly---instead, the graph can be decomposed into a collection of syntax trees with references between them, which we call a \emph{grove}.
 User actions on the grove can be converted into graph edits to be applied locally or sent to another user for replay.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Approach}
 
 % starting
-Alice and Bob are writing a program together.
-They each open their editor and see an empty hole ($\hole$).
+Suppose Alice and Bob want to collaboratively edit a program.
+For our examples, the goal is to arrive at a simple arithmetic expression of initially indeterminate form.
+Although we assume something like real-time synchronization,
+neither this narrative nor the underlying technical development precludes a more traditional Git-style approach.
+Upon opening their respective editors to a new shared program,
+both Alice and Bob see a cursor on an empty hole ($\hole$).
 
-% sketch and share
-Alice constructs a number 1.
-It replaces the hole in her editor.
-Alice pushes her edit to Bob and then he also sees the 1.
-(we're assuming it's realtime-ish here, but there's nothing in this narrative or underlying technical development that precludes a more traditional Git-style approach)
+% sketch and share 
+Alice begins by pressing \kbinput{1}, which constructs a number (1).
+The new term ``fills'' the hole under the cursor by taking its place.
+Bob continues to see the hole until he receives Alice's edit,
+at which point he also see the number instead of the hole.
 
 % wrapping
-With his cursor on the 1, Bob constructs a + operator.
-It wraps the 1, moving the number to left side of the +.
-The right side of the + is an empty hole.
-Bob pushes this edit to Alice and then she sees the + wrapped around the 1.
+Bob builds on Alice's work by pressing \kbinput{+}, which constructs a binary sum ($\ePlus{}{\hole}{\hole}$).
+Because his cursor is on a concrete term instead of an empty hole, the existing term is ``wrapped'' by the new one.
+Bob now sees a sum with the number on the left and an empty hole on the right ($\ePlus{}{1}{\hole}$).
+Alice continues to see only the number until she receives Bob's edit,
+at which point she also sees the sum.
 
 % conflict
-Alice and Bob both put their cursors on the empty right side of the +.
-Alice constructs a * operator at the same time that Bob constructs a variable $x$.
-They push their edits to each other at the same time, i.e., without any global relative ordering between the two edits.
-Now the right side of the + has a conflict: is it a * or an $x$?
-This fact is explicitly represented as a conflict hole ($1 + \conflictHole{\hole * \hole, x}$) for both Alice and Bob.
+Next, Alice and Bob move their cursors to the empty hole on the right.
+Unfortunately, they have not yet agreed on what the next edit will be.
+Alice constructs a product ($\eTimes{}{\hole}{\hole}$),
+whereas Bob constructs a variable ($x$).
+They receive each other's edit at the same time, i.e., without any global relative ordering between the two edits.
+Now, the right side of the sum has a conflict: is it a variable or a product?
+This fact is explicitly represented as a conflict hole on the right side of the sum ($\ePlus{}{1}{\conflictHole{x, \eTimes{}{\hole}{\hole}}}$).
 
 % deletion / detach
-After some discussion, Alice and Bob decide it should be a *.
-Alice deletes the $x$.
-% edits to detached terms are not lost
-(Concurrently, Bob keeps editing the $X$ ... and his changes are not lost)
-Alice pushes the edit to Bob.
-Both Alice and Bob see $1 + \hole * \hole$.
-The conflict is resolved.
-The $x$, now disconnected from the main program, is shown in a set of deleted terms.
+Bob moves his cursor to the variable and renames it to $y$.
+Before Alice receives Bob's edit,
+she decides to resolve the conflict by wrapping Bob's variable in the product.
+First, Alice ``deletes'' the variable by detaching it from the sum.
+Then, she relocates the detached variable to the left operand of the product.
+Alice now sees the new product in place of the conflict ($\ePlus{}{1}{\eTimes{}{x}{\hole}}$).
+However, Bob's edit to the variable is not lost.
+After the remaining edits are shared,
+both Alice and Bob see the new product and the renamed variable ($\ePlus{}{1}{\eTimes{}{y}{\hole}}$).
 
 % restoration / multiparents
-Alice moves the $x$ to the left side of the *.
-At the same time, Bob moves the $x$ to the right side of the *.
-They push their edits to each other at the same time.
-Now the $x$ is on both sides of the *.
-Both Alice and Bob see $1 + \multiVertex{\e_1} * \multiVertex{\e_1}$.
-The $x$ is again detached from the main program, this time shown as the term associated with reference $\multiVertex{\e_1}$.
+Alice and Bob both decide independently to move the variable to the right side of the product.
+They place their cursors on the variable and delete it.
+Alice relocates the detached variable to the right side of the product.
+Bob changes his mind and puts it back on the left side.
+They receive each other's edits and see a reference ($\multiVertex{\e_1}$), associated with the moving variable, on either side of the product ($\ePlus{}{1}{\eTimes{}{\multiVertex{\e_1}}{\multiVertex{\e_1}}}$).
 
-% what remains
+% unicycles
 After further discussion, Alice and Bob decide to try a different approach.
-Alice deletes the references.
-Bob deletes the 1 and constructs another * operator in its place.
-They push their edits to each other.
-Both Alice and Bob see $\hole * \hole + \hole * \hole$.
-Alice moves the left * to the left side of the right * and sees $\hole + \hole * \hole * \hole$.
-Bob moves the right * to the right side of the left * and sees $\hole * \hole * \hole + \hole$.
-They push their changes to each other.
-Both Alice and Bob see $\hole + \hole$.
-Both *s are now connected to each other and disconnected from the main program, even though neither Alice nor Bob fully disconnected either one.
-Alice and Bob now see, separated from the main program, $\hole * \cycleVertex{\e_3}$ associated with reference $\cycleVertex{\e_2}$ and $\cycleVertex{\e_2} * \hole$ associated with reference $\cycleVertex{\e_3}$.
-What happened?
-Moving a term involves detaching it from its parent and attaching it to a new one.
-For both Alice and Bob, the old parent was the + and the new parent was the opposing *.
-Each side's local edits each detach one * and not the other.
+Alice deletes the references while Bob deletes the number and constructs another product in its place.
+They receive each other's edits and see a sum of products of empty holes ($\hole * \hole + \hole * \hole$).
+Alice decides to wrap the left product with the right one.
+She deletes the left product and relocates it to the left side of the right product ($\ePlus{}{\hole}{\eTimes{}{\eTimes{}{\hole}{\hole}}{\hole}}$).
+Before receiving Alice's edits,
+Bob decides to wrap the right product with the left one.
+He deletes the right product and relocates it to the right side of the left product ($\ePlus{}{\eTimes{}{\hole}{\eTimes{}{\hole}{\hole}}}{\hole}$).
+Alice and Bob see two slightly different arithmetic forms built around the sum.
+However, after they receive each other's edits, both products are detached from the sum ($\ePlus{}{\hole}{\hole}$).
+One product has a reference on its left ($\eTimes{}{\cycleVertex{\e_2}}{\hole}$).
+The other has a reference on its right ($\eTimes{}{\hole}{\cycleVertex{\e_3}}$).
+Each product references the other in a cycle that can be
+decomposed into a pair of acyclic terms where each has a symbolic reference to the other.
 
 % Modeling a program as a graph with a distinguished root allows us to handle interesting states like the ones in our examples.
 % Such a graph can be decomposed into a \emph{grove} consisting of three sets:
@@ -187,12 +196,16 @@ Each side's local edits each detach one * and not the other.
 % A user can update all of the others with a ``sync'' action that coordinates propagation via an edit action calculus. 
 % Actions in the calculus are commutative, so all users will converge on the same state as edits are synchronized.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \section{Results and Contributions}
 
 Results: commutativity theorem
 Contribution: clean collaborative editing (via the commutativity theorem)
 
 (Next steps (maybe): looking forward to semantic structure editing)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Related Work}
 
@@ -206,6 +219,8 @@ Collaborative Editing?
 
 CRDT-style coordination (as opposed to operational transforms)
 - similar to our approach b.c. of commutativity results, but our is unique b.c. of structure editing (vs text editing)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Conclusion}
 
