@@ -38,7 +38,7 @@
 
 \begin{document}
 
-\title[Grove]{Grove: A Convergent Collaborative Structure-Editor Calculus}
+\title[Grove]{Grove: A Convergent Collaborative Structure Editor Calculus}
 
 % \author{Michael D. Adams}
 % \orcid{0000-0003-3160-6972}
@@ -108,107 +108,140 @@ User actions on the grove can be converted into graph edits to be applied locall
 
 \section{Approach}
 
+% TODO: look for places to talk about the graph
+
 % starting
-Suppose Alice and Bob want to collaboratively edit a program.
-For our examples, the goal is to arrive at a simple arithmetic expression of initially indeterminate form.
-Although we assume something like real-time synchronization,
-neither this narrative nor the underlying technical development precludes a more traditional Git-style approach.
+Suppose Alice and Bob want to collaboratively edit a program using Grove.
+For simplicity, we restrict ourselves to simple arithmetic expressions.
+In Grove, Alice and Bob collaborate by sending each other their edit actions as graph edits.
+We make no assumptions about the underlying communication infrastructure.
 
 % sketch and share 
-Upon opening their respective editors to a new shared program,
-both Alice and Bob see a cursor on an empty hole ($\hole$).
+Alice and Bob open their respective editors to a new shared program,
+which they see as a cursor on an empty hole ($\hole$).
 Alice begins by constructing a number (1).
-The new term ``fills'' the hole under the cursor by taking its place.
+The new term fills the hole under the cursor.
 Bob continues to see the hole until he receives Alice's edit,
-at which point he also see the number.
+at which point Bob also sees the number.
 
 % wrapping
-Bob builds on Alice's work by constructing a binary sum ($\ePlus{}{\hole}{\hole}$).
-Because his cursor is on a concrete term (the number) instead of an empty hole, the existing term is ``wrapped'' by the new one.
-Bob now sees a sum with the number on the left and an empty hole on the right ($\ePlus{}{1}{\hole}$).
+Bob builds on Alice's work by constructing a plus operator.
+Structurally, this requires ``wrapping'' a plus constructor around the existing term, resulting in $\ePlus{}{1}{\hole}$.
 Alice continues to see only the number until she receives Bob's edit,
-at which point she also sees the sum.
+at which point Alice also sees $\ePlus{}{1}{\hole}$.
 
 % conflict
-Next, Alice and Bob move their cursors to the empty hole on the right.
+% TODO: Call out how this leads to a different result than if we replayed user actions instead of graph actions, i.e., emphasize the difference between text-based and structural edit conflicts. Make it clear that what's being said is "I want the left position of the + to be x or 2," as opposed to "I want to insert the character x or 2 at the given cursor position."
+
+% Alice           Bob            
+% 1 + >[]<        1 + >[]<         A: construct times; move to other child
+% 1 + >[]< * []   1 + >[]<         B: construct x
+% 1 + >[]< * []   1 + >x<          {sync: 
+%                                     A: construct x 
+%                                     B: construct times } 
+% 1 + >x< * []    1 + >x< * []
+% TODO: maybe allude to this kind of scenario in the related work
+
+% Alice           Bob              
+% 1 + >[]<        1 + >[]<         A: construct times
+% 1 + >[]< * []   1 + >[]<         B: construct x
+% 1 + >[]< * []   1 + >x<          {sync: 
+%                                     A: construct x 
+%                                     B: construct times } 
+% 1 + >x< * []    1 + >x< * []
+
+% Alice              Bob            
+% 1 +^a >[]<         1 +^a >[]<       A: make R of a into times
+% 1 +^a >[]< *^b []  1 +^a >[]<       B: make R of a into x
+% 1 +^a >[]< *^b []  1 +^a >x<        {sync: 
+%                                        A: make R of a into x
+%                                        B: make R of a into times}
+
+Both Alice and Bob move their cursors to the empty hole on the right.
 Unfortunately, they have not yet agreed on what the next edit will be.
-Alice constructs a product ($\eTimes{}{\hole}{\hole}$),
-whereas Bob constructs a variable ($x$).
-They receive each other's edit at the same time, i.e., without any global relative ordering between the two edits.
-Now, the right side of the sum has a conflict: is it a variable or a product?
-This fact is explicitly represented as a conflict hole on the right side of the sum ($\ePlus{}{1}{\conflictHole{x, \eTimes{}{\hole}{\hole}}}$).
+Alice constructs a times ($\eTimes{}{\hole}{\hole}$) whereas Bob constructs a variable ($x$).
+They each send their edits to one another.
+Because these edits occured concurrently, i.e., without any global relative ordering between them, we now have a conflict: is it a variable or a times operator?
+This fact is explicitly represented as a conflict hole ($\ePlus{}{1}{\conflictHole{x, \eTimes{}{\hole}{\hole}}}$).
+
+Conflict holes indicate where conflicts occur and provide a consistent syntax for recording the terms involved.
+Transforming user actions into graph edits fixes the original location of the action, so subsequent replays are not affected by the cursor.
+In contrast, naively applying the Hazel calculus would (coincidentally and silently) merge the conflicting terms if nobody moves their cursor during replay, 
+and would cause their edit states to diverge otherwise.
+Applying a text-based technique would likely merge the characters `x' and `*'.
 
 % deletion / detach
-Bob moves his cursor to the variable and renames it to $y$.
-Before Alice receives Bob's edit,
-she decides to resolve the conflict by wrapping Bob's variable in the product.
-First, Alice ``deletes'' the variable by detaching it from the sum.
-Then, she relocates the detached variable to the left operand of the product.
-Alice now sees the new product in place of the conflict ($\ePlus{}{1}{\eTimes{}{x}{\hole}}$).
-However, Bob's edit to the variable is not lost.
-After the remaining edits are shared,
-both Alice and Bob see the new product and the renamed variable ($\ePlus{}{1}{\eTimes{}{y}{\hole}}$).
+% TODO: get rid of this, but keep the detail that Bob's edits aren't lost.
+% Bob moves his cursor to the variable and renames it to $y$.
+% Before Alice receives Bob's edit,
+% she decides to resolve the conflict by wrapping Bob's variable in the product.
+% First, Alice ``deletes'' the variable by detaching it from the sum.
+% Then, she relocates the detached variable to the left operand of the product.
+% Alice now sees the new product in place of the conflict ($\ePlus{}{1}{\eTimes{}{x}{\hole}}$).
+% However, Bob's edit to the variable is not lost.
+% After the remaining edits are shared,
+% both Alice and Bob see the new product and the renamed variable ($\ePlus{}{1}{\eTimes{}{y}{\hole}}$).
 
 % restoration / multiparents
-Alice and Bob both decide independently to move the variable to the right side of the product.
-They place their cursors on the variable and delete it.
-Alice relocates the detached variable to the right side of the product.
-Bob changes his mind and puts it back on the left side.
-They receive each other's edits and see a reference ($\multiVertex{\e_1}$), associated with the moving variable, on either side of the product ($\ePlus{}{1}{\eTimes{}{\multiVertex{\e_1}}{\multiVertex{\e_1}}}$).
+Alice resolves the conflict by moving her cursor to it and deleting it.
+Once Bob receives her edits, they both see $\ePlus{}{1}{\hole}$.
+Alice moves the number to the right.
+Bob does the same and then moves it back.
+After they send their edits to each other, one term (the number) inhabits two positions, so we have a positioning conflict:
+does it go on the left or the right?
+This fact is represented with two multiparent references ($\ePlus{}{\multiVertex{\e_1}}{\multiVertex{\e_1}}$) where the reference ($\multiVertex{\e_1})$ is a symbolic link to the conflicting term.
 
 % unicycles
 After further discussion, Alice and Bob decide to try a different approach.
-Alice deletes the references while Bob deletes the number and constructs another product in its place.
-They receive each other's edits and see a sum of products of empty holes ($\hole * \hole + \hole * \hole$).
-Alice decides to wrap the left product with the right one.
-She deletes the left product and relocates it to the left side of the right product ($\ePlus{}{\hole}{\eTimes{}{\eTimes{}{\hole}{\hole}}{\hole}}$).
-Before receiving Alice's edits,
-Bob decides to wrap the right product with the left one.
-He deletes the right product and relocates it to the right side of the left product ($\ePlus{}{\eTimes{}{\hole}{\eTimes{}{\hole}{\hole}}}{\hole}$).
-Alice and Bob see two slightly different arithmetic forms built around the sum.
-However, after they receive each other's edits, both products are detached from the sum ($\ePlus{}{\hole}{\hole}$).
-One product has a reference to the other on its left ($\eTimes{}{\cycleVertex{\e_2}}{\hole}$).
-The other has a reference on its right ($\eTimes{}{\hole}{\cycleVertex{\e_3}}$).
-Together, they form a cycle.
+Alice replaces each of the references with a times operator.
+Bob receives her edits and they see ($\hole * \hole + \hole * \hole$).
+Alice repositions the left times operator into the right one and sees ($\ePlus{}{\hole}{\eTimes{}{\eTimes{}{\hole}{\hole}}{\hole}}$).
+Bob repositions the right times operator into the left one and sees ($\ePlus{}{\eTimes{}{\hole}{\eTimes{}{\hole}{\hole}}}{\hole}$).
+When they share their edits with each other, both of the times operators disappear!
 
-% Modeling a program as a graph with a distinguished root allows us to handle interesting states like the ones in our examples.
-% Such a graph can be decomposed into a \emph{grove} consisting of three sets:
-%   terms corresponding to vertices with no parents,
-%   terms corresponding to vertices with multiple parents,
-%   and terms corresponding to vertices on unicyclic subgraphs.
-% The main program corresponds to the descendants of the root.
-% Deleted terms correspond to any other vertices with no parents.
-% Terms restored more than once correspond to vertices with multiple parents.
-% Whatever remains corresponds to vertices on unicyclic subgraphs.
-% Conflicts correspond to vertices that share a parent.
+What happened?
+From the perspective of the graph, each term has a corresponding vertex.
+To reposition a vertex, we delete its incoming edges and reconstruct them elsewhere.
+Although Alice and Bob separately deleted just the edge anchoring their respective operator to the plus,
+their combined edits detached both times operators from the plus and attached them to each other to
+form a unicycle~\cite{kruskal_efficient_1990}:
+two independent terms---($\eTimes{}{\cycleVertex{\e_2}}{\hole}$) and ($\eTimes{}{\cycleVertex{\e_3}}{\hole}$)---each carrying a unicycle reference to the other.
 
-
-
-% (Make it example driven: Alice and Bob. Be careful not to plagiarize Michael.)
-
-% (simple cases, conflicts, why we need a graph ~> why groves are a thing)
-
-% We (cyrus: need to) model a program as a graph (which allows us to handle interesting subtleties).
-% This allows us to model tricky program states with holes and references.
-
-% (neat idea: we represent conflicts as holes)
-
-% Each user has a copy of the graph.
-% A user can update all of the others with a ``sync'' action that coordinates propagation via an edit action calculus. 
 % Actions in the calculus are commutative, so all users will converge on the same state as edits are synchronized.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Results and Contributions}
+\section{Formalism}
 
-Results: commutativity theorem
-Contribution: clean collaborative editing (via the commutativity theorem)
+\subsection{Editor States}
+Introduce the graph. Give an example connecting to Sec. 2.
+Introduce terms and groves.
+Outline how they're connected: what decomp / recomp are (don't overdo it)
+(Inverse relationship)
 
-(Next steps (maybe): looking forward to semantic structure editing)
+\subsection{Edits}
+What the graph edits are.
+State the commutativity theorem (converging editor states when users communicate)
+Point out that commutative calculus ==> this is a CRDT
+User actions are higher level, but map onto graph edits: give an example
+Show judgment form "user action --> graph edits" and give an example.
+
+% Results: commutativity theorem
+% Contribution: clean collaborative editing (via the commutativity theorem)
+
+% (Next steps (maybe): looking forward to semantic structure editing)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Related Work}
+
+% Strategy:
+% - "near" (conceptually or technically) work that helps understand what Grove is / does.
+% - competing or contrasting work
+% 
+% Purpose:
+% - establish novelty
+% - entry points into related history
 
 (Syntactic) Structure Editing (Scratch, ...)
 
@@ -219,7 +252,9 @@ Semantic Structure Editing (Hazel)
 Collaborative Editing?
 
 CRDT-style coordination (as opposed to operational transforms)
-- similar to our approach b.c. of commutativity results, but our is unique b.c. of structure editing (vs text editing)
+- similar to our approach b.c. of commutativity results, but ours is unique b.c. of structure editing (vs text editing)
+
+formal version control systems?
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
