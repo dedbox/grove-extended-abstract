@@ -32,7 +32,51 @@
 \newcommand{\multiVertex}[1]{\textcolor{red}{\ensuremath{\curlyveedownarrow_{#1}}}}
 \newcommand{\cycleVertex}[1]{\textcolor{red}{\ensuremath{\circlearrowleft_{#1}}}}
 
-\newcommand{\kbinput}[1]{\texttt{#1}}
+\newcommand{\E}{\mathcal{E}}
+
+\newcommand{\SetOf}[1]{\left\{#1\right\}}
+
+% tikz
+
+\usepackage{tikz}
+\usetikzlibrary{babel} % Ensure compatibility the 'babel' package
+
+% Define outline versions of + and -
+\def\outlinepad{0.4pt}
+\def\outlinestroke{0.4pt}
+\newcommand{\Plus}{\mathord{
+\begin{tikzpicture}[anchor=base, baseline]
+%\node at (0,0) {+};
+\path[draw, line width=\outlinestroke]
+   ( 0.333em+\outlinestroke/2+\outlinepad,  0.270em+\outlinestroke/2+\outlinepad)
+ --( 0.333em+\outlinestroke/2+\outlinepad,  0.229em-\outlinestroke/2-\outlinepad)
+ --( 0.021em+\outlinestroke/2+\outlinepad,  0.229em-\outlinestroke/2-\outlinepad)
+ --( 0.021em+\outlinestroke/2+\outlinepad, -0.084em-\outlinestroke/2-\outlinepad)
+ --(-0.020em-\outlinestroke/2-\outlinepad, -0.084em-\outlinestroke/2-\outlinepad)
+ --(-0.020em-\outlinestroke/2-\outlinepad,  0.229em-\outlinestroke/2-\outlinepad)
+ --(-0.333em-\outlinestroke/2-\outlinepad,  0.229em-\outlinestroke/2-\outlinepad)
+ --(-0.333em-\outlinestroke/2-\outlinepad,  0.270em+\outlinestroke/2+\outlinepad)
+ --(-0.020em-\outlinestroke/2-\outlinepad,  0.270em+\outlinestroke/2+\outlinepad)
+ --(-0.020em-\outlinestroke/2-\outlinepad,  0.583em+\outlinestroke/2+\outlinepad)
+ --( 0.021em+\outlinestroke/2+\outlinepad,  0.583em+\outlinestroke/2+\outlinepad)
+ --( 0.021em+\outlinestroke/2+\outlinepad,  0.270em+\outlinestroke/2+\outlinepad)
+ --cycle
+ ;
+\end{tikzpicture}
+}}
+
+\newcommand{\Minus}{\mathord{
+\begin{tikzpicture}[anchor=base, baseline]
+%\node at (0,0) {$-$};
+\path[draw, line width=\outlinestroke]
+   ( 0.306em+\outlinestroke/2+\outlinepad,  0.270em+\outlinestroke/2+\outlinepad)
+ --( 0.306em+\outlinestroke/2+\outlinepad,  0.229em-\outlinestroke/2-\outlinepad)
+ --(-0.306em-\outlinestroke/2-\outlinepad,  0.229em-\outlinestroke/2-\outlinepad)
+ --(-0.306em-\outlinestroke/2-\outlinepad,  0.270em+\outlinestroke/2+\outlinepad)
+ --cycle
+ ;
+\end{tikzpicture}
+}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -68,6 +112,7 @@
 % TODO: name-check Hazel and Scratch and MPS (and WebFlow)
 
 \section{Introduction}
+\label{sec:introduction}
 
 % (avoid creating a fight in the intro by claiming things the reader may summarily reject)
 
@@ -107,6 +152,7 @@ User actions on the grove can be converted into graph edits to be applied locall
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Approach}
+\label{sec:alice-and-bob}
 
 % TODO: look for places to talk about the graph
 
@@ -125,7 +171,7 @@ Bob continues to see the hole until he receives Alice's edit,
 at which point Bob also sees the number.
 
 % wrapping
-Bob builds on Alice's work by constructing a plus operator.
+Bob builds on Alice's work by constructing a plus.
 Structurally, this requires ``wrapping'' a plus constructor around the existing term, resulting in $\ePlus{}{1}{\hole}$.
 Alice continues to see only the number until she receives Bob's edit,
 at which point Alice also sees $\ePlus{}{1}{\hole}$.
@@ -161,13 +207,13 @@ Both Alice and Bob move their cursors to the empty hole on the right.
 Unfortunately, they have not yet agreed on what the next edit will be.
 Alice constructs a times ($\eTimes{}{\hole}{\hole}$) whereas Bob constructs a variable ($x$).
 They each send their edits to one another.
-Because these edits occured concurrently, i.e., without any global relative ordering between them, we now have a conflict: is it a variable or a times operator?
+Because these edits occured concurrently, i.e., without any global relative ordering between them, we now have a conflict: is it a variable or a times?
 This fact is explicitly represented as a conflict hole ($\ePlus{}{1}{\conflictHole{x, \eTimes{}{\hole}{\hole}}}$).
 
-Conflict holes indicate where conflicts occur and provide a consistent syntax for recording the terms involved.
+Conflict holes indicate where conflicts occur and specify the terms involved.
 Transforming user actions into graph edits fixes the original location of the action, so subsequent replays are not affected by the cursor.
-In contrast, naively applying the Hazel calculus would (coincidentally and silently) merge the conflicting terms if nobody moves their cursor during replay, 
-and would cause their edit states to diverge otherwise.
+In contrast, naively applying the Hazel calculus (coincidentally and silently) merges the conflicting terms if neither Alice or Bob moves their cursor during replay, 
+and causes their edit states to diverge otherwise.
 Applying a text-based technique would likely merge the characters `x' and `*'.
 
 % deletion / detach
@@ -183,37 +229,67 @@ Applying a text-based technique would likely merge the characters `x' and `*'.
 % both Alice and Bob see the new product and the renamed variable ($\ePlus{}{1}{\eTimes{}{y}{\hole}}$).
 
 % restoration / multiparents
-Alice resolves the conflict by moving her cursor to it and deleting it.
-Once Bob receives her edits, they both see $\ePlus{}{1}{\hole}$.
+Alice resolves the conflict by moving her cursor to the conflict hole and deleting it.
+Bob receives her edits and they see $\ePlus{}{1}{\hole}$.
 Alice moves the number to the right.
 Bob does the same and then moves it back.
 After they send their edits to each other, one term (the number) inhabits two positions, so we have a positioning conflict:
-does it go on the left or the right?
-This fact is represented with two multiparent references ($\ePlus{}{\multiVertex{\e_1}}{\multiVertex{\e_1}}$) where the reference ($\multiVertex{\e_1})$ is a symbolic link to the conflicting term.
+does the number go on the left or the right?
+This fact is represented with two instances of a multiparent reference ($\multiVertex{\e_1})$,
+a symbolic link to the conflicting term,
+resulting in ($\ePlus{}{\multiVertex{\e_1}}{\multiVertex{\e_1}}$).
 
 % unicycles
-After further discussion, Alice and Bob decide to try a different approach.
-Alice replaces each of the references with a times operator.
-Bob receives her edits and they see ($\hole * \hole + \hole * \hole$).
-Alice repositions the left times operator into the right one and sees ($\ePlus{}{\hole}{\eTimes{}{\eTimes{}{\hole}{\hole}}{\hole}}$).
-Bob repositions the right times operator into the left one and sees ($\ePlus{}{\eTimes{}{\hole}{\eTimes{}{\hole}{\hole}}}{\hole}$).
-When they share their edits with each other, both of the times operators disappear!
+Alice and Bob decide to try a different approach.
+Alice replaces each of the references with a times.
+Bob receives Alice's edits, resulting in ($\hole * \hole + \hole * \hole$).
+Alice moves the left times operator into the right one and sees ($\ePlus{}{\hole}{\eTimes{}{\eTimes{}{\hole}{\hole}}{\hole}}$).
+Bob moves the right times operator into the left one and sees ($\ePlus{}{\eTimes{}{\hole}{\eTimes{}{\hole}{\hole}}}{\hole}$).
+They share the edits with each other and both of the times operators disappear!
 
 What happened?
 From the perspective of the graph, each term has a corresponding vertex.
-To reposition a vertex, we delete its incoming edges and reconstruct them elsewhere.
-Although Alice and Bob separately deleted just the edge anchoring their respective operator to the plus,
-their combined edits detached both times operators from the plus and attached them to each other to
+Moving a term corresponds to repositioning a vertex.
+Repositioning a vertex involves deleting its incoming edges and reconstructing them somewhere else.
+Although Alice and Bob separately deleted just the edge anchoring their respective times to the plus,
+the combined edits detached both times operators and attached them to each other to
 form a unicycle~\cite{kruskal_efficient_1990}:
-two independent terms---($\eTimes{}{\cycleVertex{\e_2}}{\hole}$) and ($\eTimes{}{\cycleVertex{\e_3}}{\hole}$)---each carrying a unicycle reference to the other.
+two interdependent terms---%
+($\eTimes{}{\cycleVertex{\e_2}}{\hole}$) and ($\eTimes{}{\cycleVertex{\e_3}}{\hole}$)%
+---each carrying a symbolic reference to the other.
 
 % Actions in the calculus are commutative, so all users will converge on the same state as edits are synchronized.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Formalism}
+\label{sec:formalism}
+
+We will now make the intuitions developed in the previous section more precise by defining a collaborative structure editor calculus called Grove.
 
 \subsection{Editor States}
+
+A \emph{graph} $G : \E \to \Sigma$ is a function from edges to edge states.
+An \emph{edge} $\e{=}(u, v, p, v') \in \E$ is a directed link originating from source vertex $v$ at position $p$ and targeting vertex $v'$.
+An \emph{edge state} $s \in \Sigma{=}\SetOf{\bot, \Plus, \Minus}$ indicates the presence and liveness of an edge in the graph.
+When $G(\e) = \Plus$, we say $\e$ is live.
+When $G(\e) = \Minus$, we say $\e$ is deleted.
+Otherwise, we say there is no liveness indicator for $\e$ in $G$, or that $\e$ is not in $G$.
+The total ordering $\bot \sqcup \Plus \sqcup \Minus$ forms a lattice over $\Sigma$.
+
+Each vertex, except the distinguished root $v_{root}$, corresponds to a term constructor.
+Each position, except the distinguished root $p_{root}$, corresponds to the location of a particular sort of subterm.
+The \emph{arity} of a vertex is a set of pairs associating each valid position with a corresponding sort.
+When the source positions and sorts of all of the vertices targeted by edges of $G$ are in the arity of their corresponding source vertices, we say $G$ is \emph{well sorted}.
+
+For example, in section~\ref{sec:alice-and-bob}, we start with graphs with no edges in them.
+When Alice constructs the number (1),
+its constructor is represented by a new vertex $v_1$,
+and a live edge $\e_1{=}(u_1, v_{root}, p_{root}, v_1)$ is added to $G$ so that $G(\e_1) = \Plus$.
+Later, when the number is deleted, $G$ is updated so that $G(\e_1) = \Minus$.
+
+A \emph{term} is an instance of one of the syntactic forms defined in figure~\ref{fig:syntax}.
+
 Introduce the graph. Give an example connecting to Sec. 2.
 Introduce terms and groves.
 Outline how they're connected: what decomp / recomp are (don't overdo it)
@@ -234,6 +310,7 @@ Show judgment form "user action --> graph edits" and give an example.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Related Work}
+\label{sec:related-work}
 
 % Strategy:
 % - "near" (conceptually or technically) work that helps understand what Grove is / does.
@@ -259,6 +336,7 @@ formal version control systems?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Conclusion}
+\label{sec:conclusion}
 
 Connect the results with collaborative structure editing: we (can now / should be able to) get the same kind of functionality as collaborative text editing in a structured setting. 
 This paper reimagines some of it around communicating structure edits, as opposed to communicating line- or character-level text edits.
@@ -308,7 +386,7 @@ We leave this for future work.
     \end{array}
   \]  
   \caption{Term syntax}
-  \label{fig:Term syntax}
+  \label{fig:syntax}
 \end{figure}%
 
 %%
