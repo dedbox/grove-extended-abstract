@@ -8,19 +8,25 @@
 
 \usepackage{stmaryrd}
 
+% Functions
+\newcommand{\decompOp}{\texttt{decomp}}
+\newcommand{\recompOp}{\texttt{recomp}}
+\newcommand{\decomp}[1]{\decompOp\mathopen{}\left(#1\right)\mathclose{}}
+\newcommand{\recomp}[1]{\recompOp\mathopen{}\left(#1\right)\mathclose{}}
+
+% Graphs
 \newcommand{\e}{\varepsilon}
 
+% Sets
+\newcommand{\SetOf}[1]{\left\{#1\right\}}
+\newcommand{\E}{\mathcal{E}}
+
+% Terms
 \newcommand{\id}[1]{\textcolor{gray}{\ensuremath{#1}}}
 \newcommand{\eid}[2]{{#2}^{\id{#1}}}
 
-\newcommand{\hole}{\ensuremath{\square}} %\textcolor{violet}{\llparenthesis}}\textcolor{violet}{\rrparenthesis}}
-\newcommand{\conflictHole}[1]{%
-{\noexpandarg\StrSubstitute{#1}{,}{\textcolor{red}{\,\textbf{|}\,}}[\myargs]%
-{\textcolor{red}{\textbf{\{}}\myargs\textcolor{red}{\textbf{\}}}}}}%
-\newcommand{\emptyHole}[2]{\square_{\id{(#1, #2)}}}
-
 \newcommand{\eVar}[2]{\eid{#1}{#2}}
-\newcommand{\eFun}[4]{\eid{#1}{\lambda} #2 : #3 . #4}
+\newcommand{\eFun}[4]{\eid{#1}{\lambda}#2{:}#3{.}#4}
 \newcommand{\eApp}[3]{\eid{#1}{\left(#2~#3\right)}}
 \newcommand{\eNum}[2]{\eid{#1}{\underline{#2}}}
 \newcommand{\ePlus}[3]{#2~\eid{#1}{\texttt{+}}~#3}
@@ -29,12 +35,38 @@
 \newcommand{\tArrow}[3]{#2 \eid{#1}{\rightarrow} #3}
 \newcommand{\tNum}[1]{\eid{#1}{Num}}
 
+\newcommand{\hole}{\ensuremath{\square}} %\textcolor{violet}{\llparenthesis}}\textcolor{violet}{\rrparenthesis}}
+\newcommand{\conflictHole}[1]{%
+{\noexpandarg\StrSubstitute{#1}{,}{\textcolor{red}{\,\textbf{|}\,}}[\myargs]%
+{\textcolor{red}{\textbf{\{}}\myargs\textcolor{red}{\textbf{\}}}}}}%
+\newcommand{\emptyHole}[2]{\square_{\id{(#1, #2)}}}
 \newcommand{\multiVertex}[1]{\textcolor{red}{\ensuremath{\curlyveedownarrow_{#1}}}}
 \newcommand{\cycleVertex}[1]{\textcolor{red}{\ensuremath{\circlearrowleft_{#1}}}}
 
-\newcommand{\E}{\mathcal{E}}
+% Constructors
+\newcommand{\ExpVar}{\mathsf{Exp\_var}}
+\newcommand{\ExpLam}{\mathsf{Exp\_lam}}
+\newcommand{\ExpApp}{\mathsf{Exp\_app}}
+\newcommand{\ExpNum}{\mathsf{Exp\_num}}
+\newcommand{\ExpPlus}{\mathsf{Exp\_plus}}
+\newcommand{\ExpTimes}{\mathsf{Exp\_times}}
+\newcommand{\PatVar}{\mathsf{Pat\_var}}
+\newcommand{\TypNum}{\mathsf{Typ\_num}}
+\newcommand{\TypArrow}{\mathsf{Typ\_arrow}}
 
-\newcommand{\SetOf}[1]{\left\{#1\right\}}
+% Positions
+\newcommand{\Root}{\mathsf{Root}}
+\newcommand{\LamParam}{\mathsf{Param}}
+\newcommand{\LamType}{\mathsf{Type}}
+\newcommand{\LamBody}{\mathsf{Body}}
+\newcommand{\AppFun}{\mathsf{Fun}}
+\newcommand{\AppArg}{\mathsf{Arg}}
+\newcommand{\PlusLeft}{\mathsf{Left}}
+\newcommand{\PlusRight}{\mathsf{Right}}
+\newcommand{\TimesLeft}{\mathsf{Left}}
+\newcommand{\TimesRight}{\mathsf{Right}}
+\newcommand{\ArrowArg}{\mathsf{Arg}}
+\newcommand{\ArrowResult}{\mathsf{Result}}
 
 % tikz
 
@@ -211,10 +243,10 @@ Because these edits occured concurrently, i.e., without any global relative orde
 This fact is explicitly represented as a conflict hole ($\ePlus{}{1}{\conflictHole{x, \eTimes{}{\hole}{\hole}}}$).
 
 Conflict holes indicate where conflicts occur and specify the terms involved.
-Transforming user actions into graph edits fixes the original location of the action, so subsequent replays are not affected by the cursor.
 In contrast, naively applying the Hazel calculus (coincidentally and silently) merges the conflicting terms if neither Alice or Bob moves their cursor during replay, 
 and causes their edit states to diverge otherwise.
 Applying a text-based technique would likely merge the characters `x' and `*'.
+Because Grove transforms user actions into graph edits, the location of an action is fixed to the graph and subsequent replays are not affected by local cursor movements.
 
 % deletion / detach
 % TODO: get rid of this, but keep the detail that Bob's edits aren't lost.
@@ -230,7 +262,7 @@ Applying a text-based technique would likely merge the characters `x' and `*'.
 
 % restoration / multiparents
 Alice resolves the conflict by moving her cursor to the conflict hole and deleting it.
-Bob receives her edits and they see $\ePlus{}{1}{\hole}$.
+Bob receives her edits, resulting in $\ePlus{}{1}{\hole}$.
 Alice moves the number to the right.
 Bob does the same and then moves it back.
 After they send their edits to each other, one term (the number) inhabits two positions, so we have a positioning conflict:
@@ -249,14 +281,14 @@ They share the edits with each other and both of the times operators disappear!
 
 What happened?
 From the perspective of the graph, each term has a corresponding vertex.
-Moving a term corresponds to repositioning a vertex.
-Repositioning a vertex involves deleting its incoming edges and reconstructing them somewhere else.
+Moving a term corresponds to repositioning a vertex,
+which involves deleting its incoming edges and reconstructing them somewhere else.
 Although Alice and Bob separately deleted just the edge anchoring their respective times to the plus,
 the combined edits detached both times operators and attached them to each other to
 form a unicycle~\cite{kruskal_efficient_1990}:
-two interdependent terms---%
+a chain of interdependent terms---%
 ($\eTimes{}{\cycleVertex{\e_2}}{\hole}$) and ($\eTimes{}{\cycleVertex{\e_3}}{\hole}$)%
----each carrying a symbolic reference to the other.
+---each containing a symbolic reference to the next link in the chain.
 
 % Actions in the calculus are commutative, so all users will converge on the same state as edits are synchronized.
 
@@ -265,7 +297,7 @@ two interdependent terms---%
 \section{Formalism}
 \label{sec:formalism}
 
-We will now make the intuitions developed in the previous section more precise by defining a collaborative structure editor calculus called Grove.
+We will now make the intuitions developed in the previous section more precise by defining the key concepts of our collaborative structure editor calculus.
 
 \subsection{Editor States}
 
@@ -277,23 +309,51 @@ When $G(\e) = \Minus$, we say $\e$ is deleted.
 Otherwise, we say there is no liveness indicator for $\e$ in $G$, or that $\e$ is not in $G$.
 The total ordering $\bot \sqcup \Plus \sqcup \Minus$ forms a lattice over $\Sigma$.
 
-Each vertex, except the distinguished root $v_{root}$, corresponds to a term constructor.
-Each position, except the distinguished root $p_{root}$, corresponds to the location of a particular sort of subterm.
-The \emph{arity} of a vertex is a set of pairs associating each valid position with a corresponding sort.
-When the source positions and sorts of all of the vertices targeted by edges of $G$ are in the arity of their corresponding source vertices, we say $G$ is \emph{well sorted}.
-
-For example, in section~\ref{sec:alice-and-bob}, we start with graphs with no edges in them.
+A \emph{vertex} $v{=}(u, k)$ is a uniquely identifiable instance of constructor $k$.
+Each vertex except a distinguished root $v_{root}$ corresponds to a term constructor,
+and each constructor has a sort: $Exp$, $Pat$, or $Typ$.
+A \emph{position} is a named port from which edges may originate.
+Note that the only valid position from $v_{root}$ is the distinguished root position $p_{root}$.
+For example, in section~\ref{sec:alice-and-bob}, the initial edit state is an empty graph.
 When Alice constructs the number (1),
-its constructor is represented by a new vertex $v_1$,
-and a live edge $\e_1{=}(u_1, v_{root}, p_{root}, v_1)$ is added to $G$ so that $G(\e_1) = \Plus$.
-Later, when the number is deleted, $G$ is updated so that $G(\e_1) = \Minus$.
+a new vertex $v_1{=}(u_1, \ExpNum(1))$ is constructed
+and a new live edge $\e_2{=}(u_2, v_{root}, p_{root}, v_1)$ is added to $G$.
+Later, when Alice replaces the number with another term, $\e_2$ is deleted and so $G(\e_2) = \Minus$.
 
-A \emph{term} is an instance of one of the syntactic forms defined in figure~\ref{fig:syntax}.
+The \emph{arity} of a constructor relates each valid position with a corresponding sort.
+For example, a lambda ($\eFun{}{q}{\tau}{e}$) has three positions%
+---$\LamParam$, $\LamType$, $\LamBody$---%
+and its arity is \[\SetOf{(\LamParam, Pat), (\LamType, Typ), (\LamBody, Exp)}.\]
+For an edge $\e{=}(u, (u_s, k_s), p, (u_t, k_t))$, we say $\e$ is \emph{well sorted} when the arity of $k_s$ relates $p$ to the sort of $k_t$.
+When all of the edges in $G$ are well sorted, we say $G$ is well sorted.
 
-Introduce the graph. Give an example connecting to Sec. 2.
-Introduce terms and groves.
-Outline how they're connected: what decomp / recomp are (don't overdo it)
-(Inverse relationship)
+Each well sorted graph can be decomposed into an equivalent collection of valid terms, as defined by the grammar in figure~\ref{fig:syntax}, with cycles broken by symbolic references.
+A \emph{grove} \[\gamma = (\Theta_{NP}, \Theta_{MP}, \Theta_{U})\] is a triple of sets of such terms, each corresponding to vertices that respectively have no parents, have multiple parents, or are designated as unicycle roots.
+The core of our formal semantics consists of two functions: $\decompOp$ and $\recompOp$.
+The former transforms graphs into groves and
+the latter transforms groves into graphs.
+The following theorems establish an isomorphism between well sorted graphs and well sorted groves.
+%
+\begin{theorem}
+  If $G$ is a well sorted graph,
+  then there exists a grove $\gamma$ such that $\decomp{G} = \gamma$.
+\end{theorem}
+%
+\begin{theorem}
+  If $\gamma$ is a well sorted grove,
+  then there exists a graph $G$ such that $\recomp{\gamma} = G$.
+\end{theorem}
+%
+\begin{theorem}
+  If $G$ is a well sorted graph,
+  and $\gamma$ is a well sorted grove such that $\decomp{G} = \gamma$,
+  then $\recomp{\gamma} = G$.
+\end{theorem}
+
+% Introduce the graph. Give an example connecting to Sec. 2.
+% Introduce terms and groves.
+% Outline how they're connected: what decomp / recomp are (don't overdo it)
+% (Inverse relationship)
 
 \subsection{Edits}
 What the graph edits are.
@@ -385,9 +445,13 @@ We leave this for future work.
       \\
     \end{array}
   \]  
-  \caption{Term syntax}
+  \caption{
+    The syntax of terms as a context-free grammar.
+    Note that for terms of the form $\protect\conflictHole{t_i}_{i \leq n}$,
+    it must be the case that $n \geq 2$.
+  }
   \label{fig:syntax}
-\end{figure}%
+\end{figure}
 
 %%
 %% The next two lines define the bibliography style to be used, and
