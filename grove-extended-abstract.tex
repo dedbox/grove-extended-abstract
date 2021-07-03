@@ -8,6 +8,11 @@
 
 \usepackage{stmaryrd}
 
+% Relations
+% G \overset{(s,\e)}{\longrightarrow} G\left[ \e \mapsto s \sqcup G(\e) \right],
+\newcommand{\applyAction}[3]{#1 \overset{#2}{\longrightarrow} #3}
+\newcommand{\extends}[2]{#1\mathopen{}\left[ #2 \right]\mathclose{}}
+
 % Functions
 \newcommand{\decompOp}{\texttt{decomp}}
 \newcommand{\recompOp}{\texttt{recomp}}
@@ -307,7 +312,7 @@ An \emph{edge state} $s \in \Sigma{=}\SetOf{\bot, \Plus, \Minus}$ indicates the 
 When $G(\e) = \Plus$, we say $\e$ is live.
 When $G(\e) = \Minus$, we say $\e$ is deleted.
 Otherwise, we say there is no liveness indicator for $\e$ in $G$, or that $\e$ is not in $G$.
-The total ordering $\bot \sqcup \Plus \sqcup \Minus$ forms a lattice over $\Sigma$.
+The total ordering $\bot \sqsubset \Plus \sqsubset \Minus$ forms a lattice over $\Sigma$.
 
 A \emph{vertex} $v{=}(u, k)$ is a uniquely identifiable instance of constructor $k$.
 Each vertex except a distinguished root $v_{root}$ corresponds to a term constructor,
@@ -356,11 +361,33 @@ The following theorems establish an isomorphism between well sorted graphs and w
 % (Inverse relationship)
 
 \subsection{Edits}
-What the graph edits are.
-State the commutativity theorem (converging editor states when users communicate)
-Point out that commutative calculus ==> this is a CRDT
-User actions are higher level, but map onto graph edits: give an example
-Show judgment form "user action --> graph edits" and give an example.
+
+A \emph{graph edit} $\alpha \in \SetOf{\Plus, \Minus} \times \E$ pairs an edge state with an edge.
+We specify the semantics of graph actions with the transition relation
+\[
+  \applyAction{G}{(s,\e)}{\extends{G}{\e \mapsto s \sqcup G(\e)}}
+\]
+where $s_1 \sqcup s_2$ is the least upper bound of edge states $s_1$ and $s_2$ according to the $\sqsubset$ ordering.
+The following theorem establishes that graph edits are commutative.
+%
+\begin{theorem}
+  \label{thm:commutativity}
+  Let $G, G'$ be well sorted graphs,
+  and let $\alpha_1, \alpha_2$ be graph edits.
+  If $\applyAction{G}{\alpha_1}{\applyAction{G_1}{\alpha_2}{G'}}$ for some $G_1$,
+  then $\applyAction{G}{\alpha_2}{\applyAction{G_2}{\alpha_1}{G'}}$ for some $G_2$.
+\end{theorem}
+%
+Theorem~\ref{thm:commutativity} guarantees that collaborating editor states converge as users communicate their edits to each other.
+Consequently, graphs are a form of CRDT~\cite{shapiro_conflict-free_2011} with respect to graph edits
+if we can assume that users will eventually stop editing
+and that all edits will eventually be delivered to every user.
+
+% What the graph edits are.
+% State the commutativity theorem (converging editor states when users communicate)
+% Point out that commutative calculus ==> this is a CRDT
+% User actions are higher level, but map onto graph edits: give an example
+% Show judgment form "user action --> graph edits" and give an example.
 
 % Results: commutativity theorem
 % Contribution: clean collaborative editing (via the commutativity theorem)
