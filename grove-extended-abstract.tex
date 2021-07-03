@@ -7,24 +7,46 @@
     \normalfont B\kern-0.5em{\scshape i\kern-0.25em b}\kern-0.8em\TeX}}}
 
 \usepackage{stmaryrd}
+\usepackage{mathpartir}
 
 % Relations
 % G \overset{(s,\e)}{\longrightarrow} G\left[ \e \mapsto s \sqcup G(\e) \right],
-\newcommand{\applyAction}[3]{#1 \overset{#2}{\longrightarrow} #3}
+\newcommand{\action}[1]{\xrightarrow{#1}}
+\newcommand{\applyAction}[3]{#1 \action{#2} #3}
 \newcommand{\extends}[2]{#1\mathopen{}\left[ #2 \right]\mathclose{}}
 
 % Functions
 \newcommand{\decompOp}{\texttt{decomp}}
-\newcommand{\recompOp}{\texttt{recomp}}
 \newcommand{\decomp}[1]{\decompOp\mathopen{}\left(#1\right)\mathclose{}}
+
+\newcommand{\recompOp}{\texttt{recomp}}
 \newcommand{\recomp}[1]{\recompOp\mathopen{}\left(#1\right)\mathclose{}}
+
+% Helpers
+\newcommand{\edgesOp}{\text{edges}}
+\newcommand{\edges}[1]{\edgesOp\mathopen{}\left(#1\right)\mathclose{}}
+
+\newcommand{\sortOp}{\text{sort}}
+\newcommand{\sort}[1]{\sortOp\mathopen{}\left(#1\right)\mathclose{}}
+
+\newcommand{\arityOp}{\text{arity}}
+\newcommand{\arity}[1]{\arityOp\mathopen{}\left(#1\right)\mathclose{}}
 
 % Graphs
 \newcommand{\e}{\varepsilon}
 
+% Graph Edits
+\newcommand{\graphEdit}[2]{\big(#1, #2\big)}
+
 % Sets
 \newcommand{\SetOf}[1]{\left\{#1\right\}}
 \newcommand{\E}{\mathcal{E}}
+
+% Sequences
+\newcommand{\SequenceOf}[1]{\left(#1\right)}
+
+% UUIDs
+\newcommand{\fresh}[1]{{#1}^{+}}
 
 % Terms
 \newcommand{\id}[1]{\textcolor{gray}{\ensuremath{#1}}}
@@ -47,6 +69,7 @@
 \newcommand{\emptyHole}[2]{\square_{\id{(#1, #2)}}}
 \newcommand{\multiVertex}[1]{\textcolor{red}{\ensuremath{\curlyveedownarrow_{#1}}}}
 \newcommand{\cycleVertex}[1]{\textcolor{red}{\ensuremath{\circlearrowleft_{#1}}}}
+\newcommand{\cursor}[1]{{\vartriangleright}#1{\vartriangleleft}}
 
 % Constructors
 \newcommand{\ExpVar}{\mathsf{Exp\_var}}
@@ -72,6 +95,10 @@
 \newcommand{\TimesRight}{\mathsf{Right}}
 \newcommand{\ArrowArg}{\mathsf{Arg}}
 \newcommand{\ArrowResult}{\mathsf{Result}}
+
+% User Actions
+\newcommand{\RepositionOp}{\text{Reposition}}
+\newcommand{\Reposition}[2]{\RepositionOp\mathopen{}\left(#1, #2\right)\mathclose{}}
 
 % tikz
 
@@ -172,7 +199,7 @@ Structure editing makes (syntactically or semantically) invalid programs impossi
 Existing collaboration techniques underlying tools such at Git or Live Share are text based.
 Text editing involves linear edits, e.g., line or character insertions and deletions.
 Structure editing, in contrast, involves tree edits, e.g., node insertions, deletions, and repositionings.
-It is not clear how to generalize collaborative techniques rooted in text editing to a structured setting.
+It is not clear how to generalize collaborative editing techniques rooted in text editing to a structured setting.
 Our goal is to develop collaborative techniques that are rooted in structure editing.
 
 % (Cyrus: Why is this a hard problem? All our existing tools are text based and it isn't clear how to do that correctly in a structured setting.)
@@ -186,9 +213,15 @@ User actions on the grove can be converted into graph edits to be applied locall
 
 % TODO: outline the rest of the paper
 
+The rest of the paper is organized as follows.
+We begin in Sec.~\ref{sec:alice-and-bob} with example scenarios that demonstrate collaborative editing in Grove.
+Sec.~\ref{sec:formalism} formalizes the concepts introduced in the examples.
+Sec.~\ref{sec:related-work} describes related work.
+Sec.~\ref{sec:conclusion} concludes.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Approach}
+\section{Grove by Example}
 \label{sec:alice-and-bob}
 
 % TODO: look for places to talk about the graph
@@ -244,7 +277,7 @@ Both Alice and Bob move their cursors to the empty hole on the right.
 Unfortunately, they have not yet agreed on what the next edit will be.
 Alice constructs a times ($\eTimes{}{\hole}{\hole}$) whereas Bob constructs a variable ($x$).
 They each send their edits to one another.
-Because these edits occured concurrently, i.e., without any global relative ordering between them, we now have a conflict: is it a variable or a times?
+Because these edits occured concurrently, i.e., without any global relative ordering between them, we now have a conflict in the right position of the plus: is it a variable or a times?
 This fact is explicitly represented as a conflict hole ($\ePlus{}{1}{\conflictHole{x, \eTimes{}{\hole}{\hole}}}$).
 
 Conflict holes indicate where conflicts occur and specify the terms involved.
@@ -268,32 +301,42 @@ Because Grove transforms user actions into graph edits, the location of an actio
 % restoration / multiparents
 Alice resolves the conflict by moving her cursor to the conflict hole and deleting it.
 Bob receives her edits, resulting in $\ePlus{}{1}{\hole}$.
-Alice moves the number to the right.
+Alice moves the 1 to the right.
 Bob does the same and then moves it back.
-After they send their edits to each other, one term (the number) inhabits two positions, so we have a positioning conflict:
-does the number go on the left or the right?
-This fact is represented with two instances of a multiparent reference ($\multiVertex{\e_1})$,
-a symbolic link to the conflicting term,
-resulting in ($\ePlus{}{\multiVertex{\e_1}}{\multiVertex{\e_1}}$).
+They send their edits to each other.
+Now, one term (the number) inhabits two positions, so we have a positioning conflict:
+does it go on the left or the right?
+This fact is represented with two multiparent references,
+resulting in $\ePlus{}{\multiVertex{\e_1}}{\multiVertex{\e_2}}$.
+
+In the graph, edges have identities, so multiple edges may have a common origin and destination.
+Multiparent references allow us to model many-to-one relationships as trees.
+References are symbolic links between terms, each represented in the graph as an edge between vertices corresponding to the linked terms.
+In our current scenario, $\e_1$ and $\e_2$ are the edges that link the operands of the plus operator to the shared term (the number 1).
 
 % unicycles
-Alice and Bob decide to try a different approach.
-Alice replaces each of the references with a times.
-Bob receives Alice's edits, resulting in ($\hole * \hole + \hole * \hole$).
-Alice moves the left times operator into the right one and sees ($\ePlus{}{\hole}{\eTimes{}{\eTimes{}{\hole}{\hole}}{\hole}}$).
-Bob moves the right times operator into the left one and sees ($\ePlus{}{\eTimes{}{\hole}{\eTimes{}{\hole}{\hole}}}{\hole}$).
-They share the edits with each other and both of the times operators disappear!
+% Alice and Bob decide to try a different approach.
+% Alice deletes the references,
+% moves her cursor onto the plus,
+% and constructs a lambda which wraps the plus in its body.
+% Bob receives Alice's edits, resulting in $\eFun{}{\hole}{\hole}{(\hole + \hole)}$.
+% Bob moves his cursor to the right of the plus and constructs a times.
+% Alice receives Bob's edits, resulting in $\eFun{}{\hole}{\hole}{(\hole + \hole * \hole)}$.
 
-What happened?
-From the perspective of the graph, each term has a corresponding vertex.
-Moving a term corresponds to repositioning a vertex,
-which involves deleting its incoming edges and reconstructing them somewhere else.
-Although Alice and Bob separately deleted just the edge anchoring their respective times to the plus,
-the combined edits detached both times operators and attached them to each other to
-form a unicycle~\cite{kruskal_efficient_1990}:
-a chain of interdependent terms---%
-($\eTimes{}{\cycleVertex{\e_2}}{\hole}$) and ($\eTimes{}{\cycleVertex{\e_3}}{\hole}$)%
----each containing a symbolic reference to the next link in the chain.
+% Alice moves the left times operator into the right one and sees ($\ePlus{}{\hole}{\eTimes{}{\eTimes{}{\hole}{\hole}}{\hole}}$).
+% Bob moves the right times operator into the left one and sees ($\ePlus{}{\eTimes{}{\hole}{\eTimes{}{\hole}{\hole}}}{\hole}$).
+% They share the edits with each other and both of the times operators disappear!
+
+% What happened?
+% From the perspective of the graph, each term has a corresponding vertex.
+% Moving a term corresponds to repositioning a vertex,
+% which involves deleting its incoming edges and reconstructing them somewhere else.
+% Although Alice and Bob separately deleted just the edge anchoring their respective times to the plus,
+% the combined edits detached both times operators and attached them to each other to
+% form a unicycle~\cite{kruskal_efficient_1990}:
+% a chain of interdependent terms---%
+% ($\eTimes{}{\cycleVertex{\e_2}}{\hole}$) and ($\eTimes{}{\cycleVertex{\e_3}}{\hole}$)%
+% ---each containing a symbolic reference to the next link in the chain.
 
 % Actions in the calculus are commutative, so all users will converge on the same state as edits are synchronized.
 
@@ -332,8 +375,8 @@ and its arity is \[\SetOf{(\LamParam, Pat), (\LamType, Typ), (\LamBody, Exp)}.\]
 For an edge $\e{=}(u, (u_s, k_s), p, (u_t, k_t))$, we say $\e$ is \emph{well sorted} when the arity of $k_s$ relates $p$ to the sort of $k_t$.
 When all of the edges in $G$ are well sorted, we say $G$ is well sorted.
 
-Each well sorted graph can be decomposed into an equivalent collection of valid terms, as defined by the grammar in figure~\ref{fig:syntax}, with cycles broken by symbolic references.
-A \emph{grove} \[\gamma = (\Theta_{NP}, \Theta_{MP}, \Theta_{U})\] is a triple of sets of such terms, each corresponding to vertices that respectively have no parents, have multiple parents, or are designated as unicycle roots.
+Each well sorted graph can be decomposed into an equivalent collection of valid terms, as defined by the grammar in Fig.~\ref{fig:syntax}, with cycles broken by symbolic references.
+A \emph{grove} \[\gamma = (\Theta_{NP}, \Theta_{MP}, \Theta_{U})\] is a triple of sets of such terms, denoted $\Theta$, each corresponding to vertices that respectively have no parents, have multiple parents, or are designated as unicycle roots.
 The core of our formal semantics consists of two functions: $\decompOp$ and $\recompOp$.
 The former transforms graphs into groves and
 the latter transforms groves into graphs.
@@ -378,10 +421,37 @@ The following theorem establishes that graph edits are commutative.
   then $\applyAction{G}{\alpha_2}{\applyAction{G_2}{\alpha_1}{G'}}$ for some $G_2$.
 \end{theorem}
 %
-Theorem~\ref{thm:commutativity} guarantees that collaborating editor states converge as users communicate their edits to each other.
-Consequently, graphs are a form of CRDT~\cite{shapiro_conflict-free_2011} with respect to graph edits
-if we can assume that users will eventually stop editing
-and that all edits will eventually be delivered to every user.
+Consequently,
+if we assume that users eventually stop editing and all edits are eventually shared,
+then graphs are a form of CRDT~\cite{shapiro_conflict-free_2011} with respect to graph edits.
+
+Although our semantics are centered on graph edits, users do not edit the graph directly.
+Instead, they edit the corresponding grove.
+A user actions is a high level operation that the formal semantics interprets as one or more graph edits.
+The Grove calculus supports three user actions: Construct, Delete, and
+Reposition.
+For example, Alice moves the numer 1 from left to right by placing her cursor on the number 1 and issuing a Reposition action that describes the intended destination.
+The following rule interprets Alice's action as two graph edits:
+one edge is deleted and another is made live.
+%
+\begin{mathpar}
+  \inferrule[Reposition]{
+    \edges{G_t} = \SetOf{\e_i}_{i \leq n} \\
+    (p, \sort{k_{G_t}}) \in \arity{k}
+  }{
+    \applyAction{
+      \cursor{t}
+    }{\Reposition{v{=}(u, k)}{p}}{
+      \SequenceOf{\graphEdit{\Minus}{\e_i}}_{i \leq n};
+      \graphEdit{\Plus}{(\fresh{u}, v, p, v_{G_t})}
+    }
+  }
+\end{mathpar}
+%
+Here, $v_{G_t}{=}(u_t, k_{G_t})$ is the vertex corresponding to $t$,
+and $G_t$ is the subgraph of $G$ of all incoming edges to $v_{G_t}$,
+and $\cursor{~}$ denotes the position of the cursor,
+and $\fresh{u}$ is a fresh identifier.
 
 % What the graph edits are.
 % State the commutativity theorem (converging editor states when users communicate)
