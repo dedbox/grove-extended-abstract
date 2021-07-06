@@ -156,24 +156,24 @@
 
 % \author{Cyrus Omar}
 % \orcid{0000-0003-4502-7971}
-\affiliation{
-  %\position{Assistant Research Scientist}
-  \department[0]{Computer Science and Engineering}
-  \department[1]{Electrical Engineering and Computer Science}
-  \department[2]{College of Engineering}
-  \institution{University of Michigan}
-  \streetaddress{Bob and Betty Beyster Building, 2260 Hayward Street}
-  \city{Ann Arbor}
-  \state{MI}
-  \postcode{48109-2121}
-  \country{USA}
-}
+% \affiliation{
+%   %\position{Assistant Research Scientist}
+%   \department[0]{Computer Science and Engineering}
+%   \department[1]{Electrical Engineering and Computer Science}
+%   \department[2]{College of Engineering}
+%   \institution{University of Michigan}
+%   \streetaddress{Bob and Betty Beyster Building, 2260 Hayward Street}
+%   \city{Ann Arbor}
+%   \state{MI}
+%   \postcode{48109-2121}
+%   \country{USA}
+% }
 
 \maketitle
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% TODO: name-check Hazel and Scratch and MPS (and WebFlow)
+% TODO: replace terms with expressions
 
 \section{Introduction}
 \label{sec:introduction}
@@ -182,19 +182,19 @@
 
 % (Cyrus: We use version control systems and we even use live share)
 Programming is increasingly collaborative.
-Programmers use a variety of tools, ranging from batch version control systems like Git~\cite{chacon_pro_2014} to real time collaboration tools such as Live Share~\cite{noauthor_use_nodate}, to coordinate changes to a common code base.
+Programmers use a variety of tools, ranging from batch version control systems like Git~\cite{chacon_pro_2014} to real time collaboration tools such as Live Share~\cite{sole_visual_2018}, to coordinate changes to a common code base.
 
 % (introduce structure editing)
 % (Cyrus: in recent years, structure editing has been an active research area... talk about Hazel, Scratch, MPS, etc.
 These collaboration tools largely assume that programs are edited as text.
 However, structure editing has become increasingly prominent in both research and practice in recent years with tools like 
 Scratch~\cite{resnick_scratch_2009}, 
-MPS~\cite{voelter_language_2011}, 
+MPS~\cite{voelter_language_2011},
 Hazel~\cite{omar_hazelnut_2017}, 
-WebFlow~\cite{noauthor_webflow_nodate},
+WebFlow~\cite{noauthor_design_2014},
 and others.
 %%% Make it clear this is something our community should care about
-Structure editing makes (syntactically or semantically) invalid programs impossible to represent, which promises to simplifies the editing process for programmers at every skill level.
+Structure editing makes (syntactically or semantically) invalid programs impossible to represent, which promises to simplify the editing process for programmers at every skill level.
 
 Existing collaboration techniques underlying tools such at Git or Live Share are text based.
 Text editing involves linear edits, e.g., line or character insertions and deletions.
@@ -208,16 +208,14 @@ In this paper, we introduce Grove, a \emph{collaborative structure editor calcul
 In Grove, edits are commutative, i.e., they can be applied in any order, so collaboration is simply replay.
 The shared edit state is represented as a graph, which is necessary to model interesting states that arise naturally in a collaborative setting, 
 including direct conflicts and positioning conflicts. 
-Users do not work with this graph directly---instead, the graph can be decomposed into a collection of syntax trees with references between them, which we call a \emph{grove}.
-User actions on the grove can be converted into graph edits to be applied locally or sent to another user for replay.
+Users do not work with this graph directly---instead, the graph is decomposed into a collection of syntax trees with references between them, which we call a \emph{grove}.
+The Grove calculus interprets a user's action on a grove as a set of graph edits which can be applied locally and sent to another user for replay.
 
-% TODO: outline the rest of the paper
-
-The rest of the paper is organized as follows.
-We begin in Sec.~\ref{sec:alice-and-bob} with example scenarios that demonstrate collaborative editing in Grove.
-Sec.~\ref{sec:formalism} formalizes the concepts introduced in the examples.
-Sec.~\ref{sec:related-work} describes related work.
-Sec.~\ref{sec:conclusion} concludes.
+% The rest of the paper is organized as follows.
+% We begin in Sec.~\ref{sec:alice-and-bob} with example scenarios that demonstrate collaborative editing in Grove.
+% Sec.~\ref{sec:formalism} formalizes the concepts introduced in the examples.
+% Sec.~\ref{sec:related-work} describes related work.
+% Sec.~\ref{sec:conclusion} concludes.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -229,20 +227,20 @@ Sec.~\ref{sec:conclusion} concludes.
 % starting
 Suppose Alice and Bob want to collaboratively edit a program using Grove.
 For simplicity, we restrict ourselves to simple arithmetic expressions.
-In Grove, Alice and Bob collaborate by sending each other their edit actions as graph edits.
-We make no assumptions about the underlying communication infrastructure.
+Alice and Bob collaborate by sending each other their edit actions as graph edits.
+We assume nothing about the communication infrastructure.
 
 % sketch and share 
 Alice and Bob open their respective editors to a new shared program,
 which they see as a cursor on an empty hole ($\hole$).
 Alice begins by constructing a number (1).
-The new term fills the hole under the cursor.
-Bob continues to see the hole until he receives Alice's edit,
-at which point Bob also sees the number.
+The new expression fills the hole under the cursor.
+Bob sees the hole until he receives Alice's edit,
+at which point he sees the number.
 
 % wrapping
 Bob builds on Alice's work by constructing a plus.
-Structurally, this requires ``wrapping'' a plus constructor around the existing term, resulting in $\ePlus{}{1}{\hole}$.
+Structurally, this requires ``wrapping'' a plus constructor around the existing expression, resulting in $\ePlus{}{1}{\hole}$.
 Alice continues to see only the number until she receives Bob's edit,
 at which point Alice also sees $\ePlus{}{1}{\hole}$.
 
@@ -280,11 +278,11 @@ They each send their edits to one another.
 Because these edits occured concurrently, i.e., without any global relative ordering between them, we now have a conflict in the right position of the plus: is it a variable or a times?
 This fact is explicitly represented as a conflict hole ($\ePlus{}{1}{\conflictHole{x, \eTimes{}{\hole}{\hole}}}$).
 
-Conflict holes indicate where conflicts occur and specify the terms involved.
-In contrast, naively applying the Hazel calculus (coincidentally and silently) merges the conflicting terms if neither Alice or Bob moves their cursor during replay, 
+Conflict holes indicate where conflicts occur and which expressions are involved.
+In contrast, naively applying the Hazel calculus (coincidentally and silently) merges the conflicting expressions if neither Alice or Bob moves their cursor during replay, 
 and causes their edit states to diverge otherwise.
 Applying a text-based technique would likely merge the characters `x' and `*'.
-Because Grove transforms user actions into graph edits, the location of an action is fixed to the graph and subsequent replays are not affected by local cursor movements.
+Because Grove interprets user actions as graph edits, replay is not affected by local cursor movements.
 
 % deletion / detach
 % TODO: get rid of this, but keep the detail that Bob's edits aren't lost.
@@ -301,18 +299,18 @@ Because Grove transforms user actions into graph edits, the location of an actio
 % restoration / multiparents
 Alice resolves the conflict by moving her cursor to the conflict hole and deleting it.
 Bob receives her edits, resulting in $\ePlus{}{1}{\hole}$.
-Alice moves the 1 to the right.
+Alice moves the number 1 to the right.
 Bob does the same and then moves it back.
 They send their edits to each other.
-Now, one term (the number) inhabits two positions, so we have a positioning conflict:
+Now, one expression (the number) inhabits two positions, so we have a positioning conflict:
 does it go on the left or the right?
 This fact is represented with two multiparent references,
 resulting in $\ePlus{}{\multiVertex{\e_1}}{\multiVertex{\e_2}}$.
 
 In the graph, edges have identities, so multiple edges may have a common origin and destination.
 Multiparent references allow us to model many-to-one relationships as trees.
-References are symbolic links between terms, each represented in the graph as an edge between vertices corresponding to the linked terms.
-In our current scenario, $\e_1$ and $\e_2$ are the edges that link the operands of the plus operator to the shared term (the number 1).
+References are symbolic links between expressions, each represented in the graph as an edge between vertices corresponding to the linked expressions.
+In our current scenario, $\e_1$ and $\e_2$ are the edges that link the operands of the plus operator to the shared expression (the number 1).
 
 % unicycles
 % Alice and Bob decide to try a different approach.
@@ -347,6 +345,52 @@ In our current scenario, $\e_1$ and $\e_2$ are the edges that link the operands 
 
 We will now make the intuitions developed in the previous section more precise by defining the key concepts of our collaborative structure editor calculus.
 
+% \begin{figure}
+%   \[
+%     \arraycolsep=0pt
+%     \begin{array}{lcllll}
+%       % t & {}\in{} & Term & {}::={} &
+%       %   e
+%       %   \mid \tau
+%       %   \mid q
+%       % \\
+%       e & {}\in{} & Exp & {}::={} &
+%         \eVar{G}{x}
+%         \mid \eFun{G}{q}{\tau}{e}
+%         \mid \eApp{G}{e}{e}
+%         \mid \eNum{G}{n}
+%         \mid \ePlus{G}{e}{e}
+%         \mid \eTimes{G}{e}{e}
+%         \mid \multiVertex{\e}
+%         \mid \cycleVertex{\e}
+%         \mid \conflictHole{e_i}_{i \leq n}
+%         \mid \emptyHole{v}{p}
+%       \\
+%       % \tau & {}\in{} & Typ & {}::={} &
+%       %   \tArrow{G}{\tau}{\tau}
+%       %   \mid \tNum{G}
+%       %   \mid \multiVertex{\e}
+%       %   \mid \cycleVertex{\e}
+%       %   \mid \conflictHole{\tau_i}_{i \leq n}
+%       %   \mid \emptyHole{v}{p}
+%       % \\
+%       % q & {}\in{} & Pat{} & {}::={} &
+%       %   \pVar{G}{x}
+%       %   \mid \multiVertex{\e}
+%       %   \mid \cycleVertex{\e}
+%       %   \mid \conflictHole{q_i}_{i \leq n}
+%       %   \mid \emptyHole{v}{p}
+%       % \\
+%     \end{array}
+%   \]  
+%   \caption{
+%     The syntax of expressions.
+%     Note that for conflict holes, $\protect\conflictHole{e_i}_{i \leq n}$,
+%     it must be the case that $n \geq 2$.
+%   }
+%   \label{fig:syntax}
+% \end{figure}
+
 \subsection{Editor States}
 
 A \emph{graph} $G : \E \to \Sigma$ is a function from edges to edge states.
@@ -358,44 +402,78 @@ Otherwise, we say there is no liveness indicator for $\e$ in $G$, or that $\e$ i
 The total ordering $\bot \sqsubset \Plus \sqsubset \Minus$ forms a lattice over $\Sigma$.
 
 A \emph{vertex} $v{=}(u, k)$ is a uniquely identifiable instance of constructor $k$.
-Each vertex except a distinguished root $v_{root}$ corresponds to a term constructor,
-and each constructor has a sort: $Exp$, $Pat$, or $Typ$.
+% Each vertex except a distinguished root $v_{root}$ corresponds to a term constructor,
+% and each constructor has a sort: $Exp$, $Pat$, or $Typ$.
 A \emph{position} is a named port from which edges may originate.
-Note that the only valid position from $v_{root}$ is the distinguished root position $p_{root}$.
-For example, in section~\ref{sec:alice-and-bob}, the initial edit state is an empty graph.
-When Alice constructs the number (1),
-a new vertex $v_1{=}(u_1, \ExpNum(1))$ is constructed
-and a new live edge $\e_2{=}(u_2, v_{root}, p_{root}, v_1)$ is added to $G$.
-Later, when Alice replaces the number with another term, $\e_2$ is deleted and so $G(\e_2) = \Minus$.
-
+% Note that the only valid position from $v_{root}$ is the distinguished root position $p_{root}$.
+% For example, in section~\ref{sec:alice-and-bob}, the initial edit state is an empty graph.
+% When Alice constructs the number (1),
+% a new vertex $v_1{=}(u_1, \ExpNum(1))$ is constructed
+% and a new live edge $\e_2{=}(u_2, v_{root}, p_{root}, v_1)$ is added to $G$.
+% Later, when Alice replaces the number with another term, $\e_2$ is deleted and so $G(\e_2) = \Minus$.
+%
 The \emph{arity} of a constructor relates each valid position with a corresponding sort.
-For example, a lambda ($\eFun{}{q}{\tau}{e}$) has three positions%
----$\LamParam$, $\LamType$, $\LamBody$---%
-and its arity is \[\SetOf{(\LamParam, Pat), (\LamType, Typ), (\LamBody, Exp)}.\]
+In this document, we have only a single sort, $Exp$.
+% For example, a lambda ($\eFun{}{q}{\tau}{e}$) has three positions%
+% ---$\LamParam$, $\LamType$, $\LamBody$---%
+% and its arity is \[\SetOf{(\LamParam, Pat), (\LamType, Typ), (\LamBody, Exp)}.\]
 For an edge $\e{=}(u, (u_s, k_s), p, (u_t, k_t))$, we say $\e$ is \emph{well sorted} when the arity of $k_s$ relates $p$ to the sort of $k_t$.
 When all of the edges in $G$ are well sorted, we say $G$ is well sorted.
 
-Each well sorted graph can be decomposed into an equivalent collection of valid terms, as defined by the grammar in Fig.~\ref{fig:syntax}, with cycles broken by symbolic references.
-A \emph{grove} \[\gamma = (\Theta_{NP}, \Theta_{MP}, \Theta_{U})\] is a triple of sets of such terms, denoted $\Theta$, each corresponding to vertices that respectively have no parents, have multiple parents, or are designated as unicycle roots.
+Each well sorted graph can be decomposed into an equivalent collection of valid expressions,
+with cycles broken by symbolic references,
+and recomposed back into a graph.
+The following grammar defines the set of valid expressions:
+\[
+  \arraycolsep=0pt
+  \begin{array}{lcllll}
+    % t & {}\in{} & Term & {}::={} &
+    %   e
+    %   \mid \tau
+    %   \mid q
+    % \\
+    e & {}\in{} & Exp & {}::={} &
+      \eVar{G}{x}
+      \mid \eFun{G}{q}{\tau}{e}
+      \mid \eApp{G}{e}{e}
+      \mid \eNum{G}{n}
+      \mid \ePlus{G}{e}{e}
+      \mid \eTimes{G}{e}{e}
+      \mid \multiVertex{\e}
+      \mid \cycleVertex{\e}
+      \mid \conflictHole{e_i}_{i \leq n}
+      \mid \emptyHole{v}{p}
+    \\
+    % \tau & {}\in{} & Typ & {}::={} &
+    %   \tArrow{G}{\tau}{\tau}
+    %   \mid \tNum{G}
+    %   \mid \multiVertex{\e}
+    %   \mid \cycleVertex{\e}
+    %   \mid \conflictHole{\tau_i}_{i \leq n}
+    %   \mid \emptyHole{v}{p}
+    % \\
+    % q & {}\in{} & Pat{} & {}::={} &
+    %   \pVar{G}{x}
+    %   \mid \multiVertex{\e}
+    %   \mid \cycleVertex{\e}
+    %   \mid \conflictHole{q_i}_{i \leq n}
+    %   \mid \emptyHole{v}{p}
+    % \\
+  \end{array}
+\]
+A \emph{grove} $\gamma = (\Theta_{NP}, \Theta_{MP}, \Theta_{U})$ is a triple of sets of such expressions, denoted $\Theta$, each corresponding to vertices that respectively have no parents, have multiple parents, or are unicycle roots.
+When $\gamma$ can be recomposed into a well sorted graph, we say $\gamma$ is well sorted.
+
 The core of our formal semantics consists of two functions: $\decompOp$ and $\recompOp$.
 The former transforms graphs into groves and
 the latter transforms groves into graphs.
-The following theorems establish an isomorphism between well sorted graphs and well sorted groves.
+The following theorem establishes an isomorphism between well sorted graphs and well sorted groves.
 %
 \begin{theorem}
   If $G$ is a well sorted graph,
-  then there exists a grove $\gamma$ such that $\decomp{G} = \gamma$.
-\end{theorem}
-%
-\begin{theorem}
-  If $\gamma$ is a well sorted grove,
-  then there exists a graph $G$ such that $\recomp{\gamma} = G$.
-\end{theorem}
-%
-\begin{theorem}
-  If $G$ is a well sorted graph,
-  and $\gamma$ is a well sorted grove such that $\decomp{G} = \gamma$,
-  then $\recomp{\gamma} = G$.
+  then there exists a well sorted grove $\gamma$
+  such that $\decomp{G} = \gamma$
+  and $\recomp{\gamma} = G$.
 \end{theorem}
 
 % Introduce the graph. Give an example connecting to Sec. 2.
@@ -426,30 +504,31 @@ if we assume that users eventually stop editing and all edits are eventually sha
 then graphs are a form of CRDT~\cite{shapiro_conflict-free_2011} with respect to graph edits.
 
 Although our semantics are centered on graph edits, users do not edit the graph directly.
-Instead, they edit the corresponding grove.
-A user actions is a high level operation that the formal semantics interprets as one or more graph edits.
-The Grove calculus supports three user actions: Construct, Delete, and
-Reposition.
-For example, Alice moves the numer 1 from left to right by placing her cursor on the number 1 and issuing a Reposition action that describes the intended destination.
-The following rule interprets Alice's action as two graph edits:
-one edge is deleted and another is made live.
-%
+% Instead, they edit the corresponding grove.
+A \emph{user action} is a high level operation that the formal semantics interpret as one or more graph edits.
+The Grove calculus supports three cursor-relative user actions on expressions: Construct, Delete, and Reposition.
+For example, when Alice moves the numer 1 from left to right, she places her cursor on the number 1 and issues a Reposition action with the new destination.
+The formal semantics interpret the action with the following rule,
 \begin{mathpar}
   \inferrule[Reposition]{
-    \edges{G_t} = \SetOf{\e_i}_{i \leq n} \\
-    (p, \sort{k_{G_t}}) \in \arity{k}
+    \edges{G_e} = \SetOf{\e_i}_{i \leq n} \\
+    (p, \sort{k_{G_e}}) \in \arity{k}
   }{
     \applyAction{
-      \cursor{t}
+      \cursor{e}
     }{\Reposition{v{=}(u, k)}{p}}{
       \SequenceOf{\graphEdit{\Minus}{\e_i}}_{i \leq n};
-      \graphEdit{\Plus}{(\fresh{u}, v, p, v_{G_t})}
+      \graphEdit{\Plus}{(\fresh{u}, v, p, v_{G_e})}
     }
   }
 \end{mathpar}
 %
-Here, $v_{G_t}{=}(u_t, k_{G_t})$ is the vertex corresponding to $t$,
-and $G_t$ is the subgraph of $G$ of all incoming edges to $v_{G_t}$,
+which produces two graph edits: $(\Minus, \e_3); (\Plus, \e_4)$,
+where $\e_3$ is the old edge from the left position of the plus
+and $\e_4$ is a new edge from the right position.
+%
+Here, $v_{G_e}{=}(u_e, k_{G_e})$ is the vertex corresponding to $e$,
+and $G_e$ is the subgraph of $G$ of all incoming edges to $v_{G_e}$,
 and $\cursor{~}$ denotes the position of the cursor,
 and $\fresh{u}$ is a fresh identifier.
 
@@ -477,78 +556,53 @@ and $\fresh{u}$ is a fresh identifier.
 % - establish novelty
 % - entry points into related history
 
-(Syntactic) Structure Editing (Scratch, ...)
+% Collaborative editors allow multiple users to work concurrently on a shared edit state.
+% In combination, this feature set is unique to Grove.
 
-% These properties (commutativity and graph representation) are unique to Grove.
+% Grove is the first CRDT-based collaborative structure editor calculus.
 
-Semantic Structure Editing (Hazel)
+The Grove calculus is an adaptation of Hazelnut~\cite{omar_hazelnut_2017} for collaborative editing.
+In Scratch~\cite{resnick_scratch_2009}, a well known structure editor for children,
+programs are visually composed of blocks corresponding to AST nodes.
+In structure editing calculi such as Hazelnut and Grove,
+valid updates must satisfy a sensibility constraint to maintain valid syntax.
 
-Collaborative Editing?
+CRDTs~\cite{shapiro_conflict-free_2011} are data types with commutative updates that guarantee all replicas converge to the same state without explicit synchronization techniques such as mutual exclusion.
+Existing work focuses largely on collaborative text editing~\cite{sun_real_2020},
+or on a narrow application domain, such as
+JSON authoring~\cite{kleppmann_conflict-free_2017},
+co-CAD~\cite{lv_novel_2018}, 
+and structuring large documents~\cite{hall_causal_2018}.
+CRDTs for graphs have been limited to adaptations to simpler structures, e.g., as sets~\cite{shapiro_convergent_2011} or trees~\cite{hall_causal_2018}.
+To our knowledge, Grove is the first structure editing calculus that uses a graph CRDT for collaboration.
 
-CRDT-style coordination (as opposed to operational transforms)
-- similar to our approach b.c. of commutativity results, but ours is unique b.c. of structure editing (vs text editing)
+Operational transformation is another approach to real-time collaborative editing.
+It imposes a causal ordering on updates, e.g., with Lamport clocks~\cite{lamport_time_nodate}.
+Because peers must communicate to enforce causality,
+operational transformations are ostensibly less well suited than CRDTs for applications on unreliable networks.
+However, recent work has shown operational transformations are more popular in practice~\cite{sun_real_2020}.
 
-formal version control systems?
+The diffTree algorithm~\cite{mcclurg_difftree_nodate} is similar to Grove, but based on operational transformation.
+The diffTree algorithm's conflict resolution algorithm is, however,
+asymmetric and therefore not strongly eventually consistent,
+so peers must coordinate to resolve conflicts.
+
+% formal version control systems?
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-Connect the results with collaborative structure editing: we (can now / should be able to) get the same kind of functionality as collaborative text editing in a structured setting. 
-This paper reimagines some of it around communicating structure edits, as opposed to communicating line- or character-level text edits.
-We leave this for future work.
+This paper introduced Grove, a collaborative structure editor based on a novel graph CRDT data type.
+By reimagining collaborative text editing around communicating structural updates,
+as opposed to communicating line- or character-level text edits,
+Grove brings the kind of functionality found in collaborative text editors to the structured setting.
+
+% Connect the results with collaborative structure editing: we (can now / should be able to) get the same kind of functionality as collaborative text editing in a structured setting. 
+% This paper reimagines some of it around communicating structure edits, as opposed to communicating line- or character-level text edits.
+% We leave this for future work.
 % convey any excitement about the future here, not before
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% figures: grammars and graph diagrams like in section 2
-
-\begin{figure}
-  \[
-    \arraycolsep=0pt
-    \begin{array}{lcllll}
-      t & {}\in{} & Term & {}::={} &
-        e
-        \mid \tau
-        \mid q
-      \\
-      e & {}\in{} & Exp & {}::={} &
-        \eVar{G}{x}
-        \mid \eFun{G}{q}{\tau}{e}
-        \mid \eApp{G}{e}{e}
-        \mid \eNum{G}{n}
-        \mid \ePlus{G}{e}{e}
-        \mid \eTimes{G}{e}{e}
-        \mid \multiVertex{\e}
-        \mid \cycleVertex{\e}
-        \mid \conflictHole{e_i}_{i \leq n}
-        \mid \emptyHole{v}{p}
-      \\
-      \tau & {}\in{} & Typ & {}::={} &
-        \tArrow{G}{\tau}{\tau}
-        \mid \tNum{G}
-        \mid \multiVertex{\e}
-        \mid \cycleVertex{\e}
-        \mid \conflictHole{\tau_i}_{i \leq n}
-        \mid \emptyHole{v}{p}
-      \\
-      q & {}\in{} & Pat{} & {}::={} &
-        \pVar{G}{x}
-        \mid \multiVertex{\e}
-        \mid \cycleVertex{\e}
-        \mid \conflictHole{q_i}_{i \leq n}
-        \mid \emptyHole{v}{p}
-      \\
-    \end{array}
-  \]  
-  \caption{
-    The syntax of terms as a context-free grammar.
-    Note that for terms of the form $\protect\conflictHole{t_i}_{i \leq n}$,
-    it must be the case that $n \geq 2$.
-  }
-  \label{fig:syntax}
-\end{figure}
 
 %%
 %% The next two lines define the bibliography style to be used, and
